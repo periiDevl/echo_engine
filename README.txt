@@ -1,1 +1,0 @@
-#HELLO! this engine is made by periiDev (jonathan perii) it has some basic 2d turtle functions, simpler python and complex 3d made with OpenGL.
