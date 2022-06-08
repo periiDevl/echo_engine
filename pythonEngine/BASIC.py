@@ -1,6 +1,6 @@
 
-def Add(numo, numt, result):
+def Add(numo, numt):
 	res = numo + numt
 	print(res)
-	result = res
+	
 	
