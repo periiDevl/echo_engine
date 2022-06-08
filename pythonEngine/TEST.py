@@ -1,8 +1,11 @@
+from turtle import position
+from typing_extensions import Self
 import pygame as pg
 from OpenGL.GL import *
 import numpy as np
 import ctypes
 from OpenGL.GL.shaders import compileProgram, compileShader
+import pyrr
 #app
 
 class Cube:
@@ -34,8 +37,13 @@ class App:
         self.shader = self.createShader("D:/git/revolver-lite/pythonEngine/shaders/vertex.txt", "D:/git/revolver-lite/pythonEngine/shaders/fragment.txt")
         glUseProgram(self.shader)
         glUniform1i(glGetUniformLocation(self.shader, "imageTexture"), 0)
+        
+        self.cube = Cube(position = [ 0, 0, -3], eulers=[0, 0, 0])
+            
         self.wood_texture = Material("D:/git/revolver-lite/pythonEngine/gfx/Screenshot (8).png")
-        self.triangle = Triangle()
+            
+        projection_transform = pyrr.matrix44.create_perspective_projection( fovy=45, aspect=640/480, near=0.1, far=10, dtype=np.float32)
+        
         self.mainLoop()
 
     def mainLoop(self):
@@ -85,12 +93,58 @@ class CubeMesh:
 
     def __init__(self):
         self.vertices = (
-            -0.5, -0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0,
-             0.5, -0.5, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0,
-             0.0,  0.5, 0.0, 0.0, 0.0, 1.0, 0.5, 0.0
-        )
+                -0.5, -0.5, -0.5, 0, 0,
+                 0.5, -0.5, -0.5, 1, 0,
+                 0.5,  0.5, -0.5, 1, 1,
+
+                 0.5,  0.5, -0.5, 1, 1,
+                -0.5,  0.5, -0.5, 0, 1,
+                -0.5, -0.5, -0.5, 0, 0,
+
+                -0.5, -0.5,  0.5, 0, 0,
+                 0.5, -0.5,  0.5, 1, 0,
+                 0.5,  0.5,  0.5, 1, 1,
+
+                 0.5,  0.5,  0.5, 1, 1,
+                -0.5,  0.5,  0.5, 0, 1,
+                -0.5, -0.5,  0.5, 0, 0,
+
+                -0.5,  0.5,  0.5, 1, 0,
+                -0.5,  0.5, -0.5, 1, 1,
+                -0.5, -0.5, -0.5, 0, 1,
+
+                -0.5, -0.5, -0.5, 0, 1,
+                -0.5, -0.5,  0.5, 0, 0,
+                -0.5,  0.5,  0.5, 1, 0,
+
+                 0.5,  0.5,  0.5, 1, 0,
+                 0.5,  0.5, -0.5, 1, 1,
+                 0.5, -0.5, -0.5, 0, 1,
+
+                 0.5, -0.5, -0.5, 0, 1,
+                 0.5, -0.5,  0.5, 0, 0,
+                 0.5,  0.5,  0.5, 1, 0,
+
+                -0.5, -0.5, -0.5, 0, 1,
+                 0.5, -0.5, -0.5, 1, 1,
+                 0.5, -0.5,  0.5, 1, 0,
+
+                 0.5, -0.5,  0.5, 1, 0,
+                -0.5, -0.5,  0.5, 0, 0,
+                -0.5, -0.5, -0.5, 0, 1,
+
+                -0.5,  0.5, -0.5, 0, 1,
+                 0.5,  0.5, -0.5, 1, 1,
+                 0.5,  0.5,  0.5, 1, 0,
+
+                 0.5,  0.5,  0.5, 1, 0,
+                -0.5,  0.5,  0.5, 0, 0,
+                -0.5,  0.5, -0.5, 0, 1
+            )
+        
+        self.vertex_count = len(self.vertices) // 5
         self.vertices = np.array(self.vertices, dtype=np.float32)
-        self.vertex_count = 3
+        
 
         self.vao = glGenVertexArrays(1)
         glBindVertexArray(self.vao)
@@ -98,13 +152,10 @@ class CubeMesh:
         glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
         glBufferData(GL_ARRAY_BUFFER, self.vertices.nbytes, self.vertices, GL_STATIC_DRAW)
         glEnableVertexAttribArray(0)
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(0))
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 20, ctypes.c_void_p(0))
         
         glEnableVertexAttribArray(1)
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(12))
-
-        glEnableVertexAttribArray(2)
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(24))
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 20, ctypes.c_void_p(12))
 
     def destroy(self):
         glDeleteVertexArrays(1, (self.vao,))
