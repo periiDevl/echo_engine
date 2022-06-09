@@ -1,5 +1,5 @@
 from turtle import position
-from typing_extensions import Self
+#from typing_extensions import Self
 import pygame as pg
 from OpenGL.GL import *
 import numpy as np
@@ -33,16 +33,23 @@ class App:
         #initialise opengl
         glClearColor(0.1, 0.2, 0.2, 1)
         glEnable(GL_BLEND)
+        glEnable(GL_DEPTH_TEST)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         self.shader = self.createShader("D:/git/revolver-lite/pythonEngine/shaders/vertex.txt", "D:/git/revolver-lite/pythonEngine/shaders/fragment.txt")
         glUseProgram(self.shader)
         glUniform1i(glGetUniformLocation(self.shader, "imageTexture"), 0)
         
         self.cube = Cube(position = [ 0, 0, -3], eulers=[0, 0, 0])
+
+        self.cube_mesh = CubeMesh()
             
         self.wood_texture = Material("D:/git/revolver-lite/pythonEngine/gfx/Screenshot (8).png")
             
         projection_transform = pyrr.matrix44.create_perspective_projection( fovy=45, aspect=640/480, near=0.1, far=10, dtype=np.float32)
+
+        glUniformMatrix4fv( glGetUniformLocation(self.shader, "projection"), 1, GL_FALSE, projection_transform)
+
+        self.modelMatrixLocation = glGetUniformLocation(self.shader, "model")
         
         self.mainLoop()
 
@@ -55,12 +62,36 @@ class App:
             for event in pg.event.get():
                 if (event.type == pg.QUIT):
                     running = False
+
+            #cube update
+            self.cube.eulers[2] += 0.2
+            if (self.cube.eulers[2] > 360):
+                self.cube.eulers[2] -= 360
+
             #refresh screen
-            glClear(GL_COLOR_BUFFER_BIT)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             glUseProgram(self.shader)
             self.wood_texture.use()
-            glBindVertexArray(self.triangle.vao)
-            glDrawArrays(GL_TRIANGLES, 0, self.triangle.vertex_count)
+
+            model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
+
+            model_transform = pyrr.matrix44.multiply(
+                m1=model_transform, 
+                m2=pyrr.matrix44.create_from_eulers(
+                    
+                    eulers= np.radians(self.cube.eulers), dtype=np.float32
+                )
+            )
+            model_transform = pyrr.matrix44.multiply(
+                m1=model_transform, 
+                m2=pyrr.matrix44.create_from_translation(
+                    vec=self.cube.position,
+                    dtype=np.float32
+                )
+            )
+            glUniformMatrix4fv(self.modelMatrixLocation, 1, GL_FALSE, model_transform)
+            glBindVertexArray(self.cube_mesh.vao)
+            glDrawArrays(GL_TRIANGLES, 0, self.cube_mesh.vertex_count)
 
             pg.display.flip()
 
@@ -83,7 +114,7 @@ class App:
     def quit(self):
         """ cleanup the app, run exit code """
 
-        self.triangle.destroy()
+        self.cube_mesh.destroy()
         self.wood_texture.destroy()
         glDeleteProgram(self.shader)
         pg.quit()
