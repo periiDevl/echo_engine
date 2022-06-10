@@ -28,22 +28,28 @@ class App:
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK,
                                     pg.GL_CONTEXT_PROFILE_CORE)
+        #good size 960 720
         pg.display.set_mode((640,480), pg.OPENGL|pg.DOUBLEBUF)
         self.clock = pg.time.Clock()
         #initialise opengl
-        glClearColor(0.1, 0.2, 0.2, 1)
+        glClearColor(0.2, 0.2, 0.3, 1)
         glEnable(GL_BLEND)
         glEnable(GL_DEPTH_TEST)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        self.shader = self.createShader("D:/git/revolver-lite/pythonEngine/shaders/vertex.txt", "D:/git/revolver-lite/pythonEngine/shaders/fragment.txt")
+        #self.shader = self.createShader("D:/git/revolver-lite/pythonEngine/shaders/vertex.txt", "C:\Users\user\Documents\GitHub\revolver-lite\pythonEngine\shaders/fragment.txt")
+        self.shader = self.createShader("C:/Users/user/Documents/GitHub/revolver-lite/pythonEngine/shaders/vertex.txt", "C:/Users/user/Documents/GitHub/revolver-lite/pythonEngine/shaders/fragment.txt")
         glUseProgram(self.shader)
         glUniform1i(glGetUniformLocation(self.shader, "imageTexture"), 0)
-        
-        self.cube = Cube(position = [ 0, 0, -3], eulers=[0, 0, 0])
-
+        #cube pos and stuff
+        self.cube = Cube(position = [ 0, 0, -2], eulers=[0, 0, 0])
+        #call cube mesh
         self.cube_mesh = CubeMesh()
-            
-        self.wood_texture = Material("D:/git/revolver-lite/pythonEngine/gfx/Screenshot (8).png")
+
+        
+        
+                    
+        #self.wood_texture = Material("D:/git/revolver-lite/pythonEngine/gfx/Screenshot (8).png")
+        self.wood_texture = Material("C:/Users/user/Documents/GitHub/revolver-lite/pythonEngine/gfx/woodrte.jpg")
             
         projection_transform = pyrr.matrix44.create_perspective_projection( fovy=45, aspect=640/480, near=0.1, far=10, dtype=np.float32)
 
@@ -67,6 +73,7 @@ class App:
             self.cube.eulers[2] += 0.2
             if (self.cube.eulers[2] > 360):
                 self.cube.eulers[2] -= 360
+                
 
             #refresh screen
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -92,6 +99,8 @@ class App:
             glUniformMatrix4fv(self.modelMatrixLocation, 1, GL_FALSE, model_transform)
             glBindVertexArray(self.cube_mesh.vao)
             glDrawArrays(GL_TRIANGLES, 0, self.cube_mesh.vertex_count)
+
+            
 
             pg.display.flip()
 
@@ -120,58 +129,10 @@ class App:
         pg.quit()
 
 #triangle
-class CubeMesh:
+class Mesh:
 
-    def __init__(self):
-        self.vertices = (
-                -0.5, -0.5, -0.5, 0, 0,
-                 0.5, -0.5, -0.5, 1, 0,
-                 0.5,  0.5, -0.5, 1, 1,
-
-                 0.5,  0.5, -0.5, 1, 1,
-                -0.5,  0.5, -0.5, 0, 1,
-                -0.5, -0.5, -0.5, 0, 0,
-
-                -0.5, -0.5,  0.5, 0, 0,
-                 0.5, -0.5,  0.5, 1, 0,
-                 0.5,  0.5,  0.5, 1, 1,
-
-                 0.5,  0.5,  0.5, 1, 1,
-                -0.5,  0.5,  0.5, 0, 1,
-                -0.5, -0.5,  0.5, 0, 0,
-
-                -0.5,  0.5,  0.5, 1, 0,
-                -0.5,  0.5, -0.5, 1, 1,
-                -0.5, -0.5, -0.5, 0, 1,
-
-                -0.5, -0.5, -0.5, 0, 1,
-                -0.5, -0.5,  0.5, 0, 0,
-                -0.5,  0.5,  0.5, 1, 0,
-
-                 0.5,  0.5,  0.5, 1, 0,
-                 0.5,  0.5, -0.5, 1, 1,
-                 0.5, -0.5, -0.5, 0, 1,
-
-                 0.5, -0.5, -0.5, 0, 1,
-                 0.5, -0.5,  0.5, 0, 0,
-                 0.5,  0.5,  0.5, 1, 0,
-
-                -0.5, -0.5, -0.5, 0, 1,
-                 0.5, -0.5, -0.5, 1, 1,
-                 0.5, -0.5,  0.5, 1, 0,
-
-                 0.5, -0.5,  0.5, 1, 0,
-                -0.5, -0.5,  0.5, 0, 0,
-                -0.5, -0.5, -0.5, 0, 1,
-
-                -0.5,  0.5, -0.5, 0, 1,
-                 0.5,  0.5, -0.5, 1, 1,
-                 0.5,  0.5,  0.5, 1, 0,
-
-                 0.5,  0.5,  0.5, 1, 0,
-                -0.5,  0.5,  0.5, 0, 0,
-                -0.5,  0.5, -0.5, 0, 1
-            )
+    def __init__(self, filepath):
+        self.vertices = self.loadMesh(filepath)
         
         self.vertex_count = len(self.vertices) // 5
         self.vertices = np.array(self.vertices, dtype=np.float32)
@@ -187,6 +148,20 @@ class CubeMesh:
         
         glEnableVertexAttribArray(1)
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 20, ctypes.c_void_p(12))
+
+    def loadMesh(self, filepath):
+        with open(filepath, "r") as f:
+            line = f.readline()
+            while line:
+                firstSpace = line.find(" ")
+                flag = line[0:firstSpace]
+
+                if flag == "v":
+                    line = line.replace("v", "")
+                elif flag == "f":
+                    pass
+                line = f.readline()
+        
 
     def destroy(self):
         glDeleteVertexArrays(1, (self.vao,))

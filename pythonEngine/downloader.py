@@ -8,7 +8,6 @@ def intro(fl):
         content = file.read()
         pfile = open(fl + '.py', 'w+')
         
-
         pcon = pfile.write(content)
         
         
@@ -21,4 +20,7 @@ def intro(fl):
 
 intro('importer')
 import importer
+intro('itc')
+import itc
+
 

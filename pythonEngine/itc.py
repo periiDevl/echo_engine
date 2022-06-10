@@ -18,11 +18,27 @@ def l():
 def r():
     right(20)
 
-onkeypress(f, "w")
-onkeypress(b, "s")
-onkeypress(r, "d")
-onkeypress(l, "a")
 
-listen()
+#onkeypress(f, "w")
+#onkeypress(b, "s")
+#onkeypress(r, "d")
+#onkeypress(l, "a")
+#listen()
+
+turY = t.ycor()
+turT = t.xcor()
+
+bx = 5
+by = 5
+
+fd(10)
+
+if (turY > by or turT > bx):
+	right(30)
+	print("onBound")
+	
+
+
+
 
 
