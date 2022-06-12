@@ -41,7 +41,7 @@ class App:
         glUseProgram(self.shader)
         glUniform1i(glGetUniformLocation(self.shader, "imageTexture"), 0)
         #cube pos and stuff
-        self.cube = Cube(position = [ 0, 0, -2], eulers=[0, 0, 0])
+        self.cube = Cube(position = [ 0, 0, -8], eulers=[0, 0, 0])
         #call cube mesh
         self.cube_mesh = Mesh("C:/Users/user/Documents/GitHub/revolver-lite/pythonEngine/models/n.obj")
 
@@ -151,43 +151,52 @@ class Mesh:
 
         
 
-    def loadMesh(self, filepath):
-        vertices = []
+    def loadMesh(self, filename):
 
+        #raw, unassembled data
         v = []
         vt = []
         vn = []
+        
+        #final, assembled and packed result
+        vertices = []
 
-        with open(filepath, "r") as f:
+        #open the obj file and read the data
+        with open(filename,'r') as f:
             line = f.readline()
             while line:
                 firstSpace = line.find(" ")
                 flag = line[0:firstSpace]
-
-                if flag == "v":
-                    line = line.replace("vt", "")
+                if flag=="v":
+                    #vertex
+                    line = line.replace("v ","")
                     line = line.split(" ")
                     l = [float(x) for x in line]
                     v.append(l)
-                elif flag == "vt":
-                    line = line.replace("vn", "")
+                elif flag=="vt":
+                    #texture coordinate
+                    line = line.replace("vt ","")
                     line = line.split(" ")
                     l = [float(x) for x in line]
                     vt.append(l)
-                elif flag == "vn":
-                    line = line.replace("vn", "")
+                elif flag=="vn":
+                    #normal
+                    line = line.replace("vn ","")
                     line = line.split(" ")
                     l = [float(x) for x in line]
                     vn.append(l)
-                elif flag == "f":
-                    line = line.replace("f", "")
-                    line = line.replace('\n' "")
+                elif flag=="f":
+                    #face, three or more vertices in v/vt/vn form
+                    line = line.replace("f ","")
+                    line = line.replace("\n","")
+                    #get the individual vertices for each line
                     line = line.split(" ")
                     faceVertices = []
                     faceTextures = []
                     faceNormals = []
-
                     for vertex in line:
+                        #break out into [v,vt,vn],
+                        #correct for 0 based indexing.
                         l = vertex.split("/")
                         position = int(l[0]) - 1
                         faceVertices.append(v[position])
@@ -195,12 +204,18 @@ class Mesh:
                         faceTextures.append(vt[texture])
                         normal = int(l[2]) - 1
                         faceNormals.append(vn[normal])
-                    triangle_in_face = len(line) - 2
+                    # obj file uses triangle fan format for each face individually.
+                    # unpack each face
+                    triangles_in_face = len(line) - 2
+
                     vertex_order = []
-                    for i in range(triangle_in_face):
+                    """
+                        eg. 0,1,2,3 unpacks to vertices: [0,1,2,0,2,3]
+                    """
+                    for i in range(triangles_in_face):
                         vertex_order.append(0)
-                        vertex_order.append(i + 1)
-                        vertex_order.append(i + 2)
+                        vertex_order.append(i+1)
+                        vertex_order.append(i+2)
                     for i in vertex_order:
                         for x in faceVertices[i]:
                             vertices.append(x)
@@ -209,12 +224,12 @@ class Mesh:
                         for x in faceNormals[i]:
                             vertices.append(x)
                 line = f.readline()
-            
-        
-
+        return vertices
+    
     def destroy(self):
         glDeleteVertexArrays(1, (self.vao,))
-        glDeleteBuffers(1, (self.vbo,))
+        glDeleteBuffers(1,(self.vbo,))
+
    
 class Material:
 
