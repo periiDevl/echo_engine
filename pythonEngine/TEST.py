@@ -219,13 +219,13 @@ class GraphicsEngine:
         pg.display.set_mode((640,480), pg.OPENGL|pg.DOUBLEBUF)
         #initialise opengl
         glClearColor(0.0, 0.0, 0.0, 1)
-        self.shader = self.createShader("C:/Users/user/Documents/GitHub/revolver-lite/pythonEngine/shaders/vertex.txt", "C:/Users/user/Documents/GitHub/revolver-lite/pythonEngine/shaders/fragment.txt")
+        self.shader = self.createShader("D:/git/revolver-lite/pythonEngine/shaders/vertex.txt", "D:/git/revolver-lite/pythonEngine/shaders/fragment.txt")
         glUseProgram(self.shader)
-        glUniform1i(glGetUniformLocation(self.shader, "C:/Users/user/Documents/GitHub/revolver-lite/pythonEngine/imageTexture"), 0)
+        glUniform1i(glGetUniformLocation(self.shader, "D:/git/revolver-lite/pythonEngine/pythonEngine/imageTexture"), 0)
         glEnable(GL_DEPTH_TEST)
 
-        self.wood_texture = Material("C:/Users/user/Documents/GitHub/revolver-lite/pythonEngine/gfx/woodrte.jpg")
-        self.cube_mesh = Mesh("C:/Users/user/Documents/GitHub/revolver-lite/pythonEngine/models/n.obj")
+        self.wood_texture = Material("D:/git/revolver-lite/pythonEngine/gfx/woodrte.jpg")
+        self.cube_mesh = Mesh("D:/git/revolver-lite/pythonEngine/models/n.obj")
 
         projection_transform = pyrr.matrix44.create_perspective_projection(
             fovy = 45, aspect = 640/480, 
