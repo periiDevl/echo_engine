@@ -1,3 +1,4 @@
+from turtle import color, position
 import pygame as pg
 from OpenGL.GL import *
 from OpenGL.GL.shaders import compileProgram,compileShader
@@ -11,6 +12,16 @@ class Cube:
 
         self.position = np.array(position, dtype=np.float32)
         self.eulers = np.array(eulers, dtype=np.float32)
+
+class Light:
+
+
+    def __init__(self, position, color, strength):
+
+        self.position = np.array(position, dtype=np.float32)
+        self.color = np.array(color, dtype=np.float32)
+        self.strength = strength
+        
 
 class Player:
 
@@ -49,6 +60,15 @@ class Scene:
                 position = [6,0,0],
                 eulers = [0,0,0]
             ),
+        ]
+
+        self.lights = [
+            Light(
+                position = [4, 0, 2],
+                color = [1, 1, 1],
+                strength = 6
+            ),
+            
         ]
 
         self.player = Player(
@@ -237,6 +257,13 @@ class GraphicsEngine:
         )
         self.modelMatrixLocation = glGetUniformLocation(self.shader, "model")
         self.viewMatrixLocation = glGetUniformLocation(self.shader, "view")
+        self.lightLocation = {
+            "position": glGetUniformLocation(self.shader, "Light.position"),
+            "color": glGetUniformLocation(self.shader, "Light.color"),
+            "strength": glGetUniformLocation(self.shader, "Light.strength")
+        }
+
+    
     
     def createShader(self, vertexFilepath, fragmentFilepath):
 
@@ -264,6 +291,10 @@ class GraphicsEngine:
         )
         glUniformMatrix4fv(self.viewMatrixLocation, 1, GL_FALSE, view_transform)
 
+        light = scene.lights[0]
+        glUniform3fv(self.lightLocation["position"], 1, light.position)
+        glUniform3fv(self.lightLocation["color"], 1, light.color)
+        glUniform1f(self.lightLocation["strength"], light.strength)
         for cube in scene.cubes:
 
             model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
@@ -313,6 +344,9 @@ class Mesh:
         #texture
         glEnableVertexAttribArray(1)
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(12))
+        #normal
+        glEnableVertexAttribArray(2)
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(20))
     
     def loadMesh(self, filename):
 
