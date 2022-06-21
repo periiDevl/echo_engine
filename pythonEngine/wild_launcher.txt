@@ -1,1 +1,49 @@
-from tinker import *
+import tkinter
+from tkinter import colorchooser
+
+global hex 
+global rbg
+hex = "#ffffff"
+
+fgCol = 'black'
+
+root = tkinter.Tk()
+root.resizable(False, False)
+root.geometry("600x600")
+root.title('wild launcher window')
+
+
+
+def clickhe():
+	print("pressed")
+
+global r 
+r = tkinter.Button(root, text="heheheha", command=clickhe, fg= fgCol, bg = hex)
+
+def openStyleMenu():
+	import tkinter
+	from tkinter import colorchooser
+	global rgb
+	global hex
+	global r
+	st = tkinter.Tk()
+	st.resizable(False, False)
+	st.geometry("300x600")
+	st.title('style menu')
+	(rgb, hex) = colorchooser.askcolor()
+	r.configure(bg = hex)
+	st.mainloop()
+	
+
+
+
+
+
+l = tkinter.Button(root, text="openStyleMenu", command=openStyleMenu, fg= fgCol, bg = "white")
+l.pack()
+r.pack()
+
+r.place(x=175, y=100)
+
+
+root.mainloop()
