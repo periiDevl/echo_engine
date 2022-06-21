@@ -34,7 +34,7 @@ by = 5
 fd(10)
 
 if (turY > by or turT > bx):
-	right(30)
+	right(40)
 	print("onBound")
 	
 

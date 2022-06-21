@@ -4,7 +4,7 @@ from OpenGL.GL import *
 from OpenGL.GL.shaders import compileProgram,compileShader
 import numpy as np
 import pyrr
-
+import math
 class Cube:
 
 
@@ -64,10 +64,15 @@ class Scene:
 
         self.lights = [
             Light(
-                position = [4, 0, 2],
-                color = [1, 1, 1],
-                strength = 6
-            ),
+                 position = [
+                    1, 1, 1
+                ],
+                color = [
+                    1, 1, 1
+                ],
+                strength = 3
+            )
+            for i in range(10)
             
         ]
 
@@ -258,11 +263,20 @@ class GraphicsEngine:
         self.modelMatrixLocation = glGetUniformLocation(self.shader, "model")
         self.viewMatrixLocation = glGetUniformLocation(self.shader, "view")
         self.lightLocation = {
-            "position": glGetUniformLocation(self.shader, "Light.position"),
-            "color": glGetUniformLocation(self.shader, "Light.color"),
-            "strength": glGetUniformLocation(self.shader, "Light.strength")
+            "position": [
+                glGetUniformLocation(self.shader, f"Lights[{i}].position")
+                for i in range(10)
+            ],
+            "color": [
+                glGetUniformLocation(self.shader, f"Lights[{i}].color")
+                for i in range(10)
+            ],
+            "strength": [
+                glGetUniformLocation(self.shader, f"Lights[{i}].strength")
+                for i in range(10)
+            ]
         }
-
+        self.cameraPosLoc = glGetUniformLocation(self.shader, "cameraPostion")
     
     
     def createShader(self, vertexFilepath, fragmentFilepath):
@@ -291,10 +305,13 @@ class GraphicsEngine:
         )
         glUniformMatrix4fv(self.viewMatrixLocation, 1, GL_FALSE, view_transform)
 
-        light = scene.lights[0]
-        glUniform3fv(self.lightLocation["position"], 1, light.position)
-        glUniform3fv(self.lightLocation["color"], 1, light.color)
-        glUniform1f(self.lightLocation["strength"], light.strength)
+        
+        for i, light, in enumerate(scene.lights):
+            glUniform3fv(self.lightLocation["position"][i], 1, light.position)
+            glUniform3fv(self.lightLocation["color"][i], 1, light.color)
+            glUniform1f(self.lightLocation["strength"][i], light.strength)
+        glUniform3fv(self.cameraPosLoc, 1, scene.player.position)
+
         for cube in scene.cubes:
 
             model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
