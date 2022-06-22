@@ -10,6 +10,8 @@ import BASIC
 downloader.intro('main')
 import main
 
+downloader.intro('SavingSystem')
+import SavingSystem
 
 
 downloader.intro('wild_launcher')

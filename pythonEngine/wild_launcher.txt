@@ -1,9 +1,10 @@
 import tkinter
 from tkinter import colorchooser
+import SavingSystem
 
 global hex 
 global rbg
-hex = "#ffffff"
+hex = SavingSystem.GetInfo(1, "#ffffff")
 
 fgCol = 'black'
 
@@ -23,6 +24,7 @@ r = tkinter.Button(root, text="heheheha", command=clickhe, fg= fgCol, bg = hex)
 def openStyleMenu():
 	import tkinter
 	from tkinter import colorchooser
+	import SavingSystem
 	global rgb
 	global hex
 	global r
@@ -31,6 +33,7 @@ def openStyleMenu():
 	st.geometry("300x600")
 	st.title('style menu')
 	(rgb, hex) = colorchooser.askcolor()
+	SavingSystem.SaveInfo(1, hex)
 	r.configure(bg = hex)
 	st.mainloop()
 	
