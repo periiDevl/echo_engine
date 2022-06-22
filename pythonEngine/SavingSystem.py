@@ -35,6 +35,7 @@ def GetLines(fileName, line):
      lines = f.read().splitlines()
      f.close() 
      return lines[line-1]
+
 def SaveInfo(line, info):
      sfile = open('savefile.txt', 'a')
      sfile = open('savefile.txt', 'r')
