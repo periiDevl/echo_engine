@@ -7,7 +7,7 @@ global rbg
 global fgHex
 
 bgHex = SavingSystem.GetInfo(1, "#ffffff")
-fgHex = SavingSystem.GetInfo(2, "#874d49")
+fgHex = SavingSystem.GetInfo(2, "#ffffff")
 
 root = tkinter.Tk()
 root.resizable(False, False)
