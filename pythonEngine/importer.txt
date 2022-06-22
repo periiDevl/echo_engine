@@ -1,20 +1,22 @@
 import downloader
 
 #Readme
-downloader.intro('README')
+downloader.intro('README', True)
 
 #basic engine commands
-downloader.intro('BASIC')
+downloader.intro('BASIC', True)
 import BASIC
 
-downloader.intro('main')
+downloader.intro('main', True)
 import main
 
-downloader.intro('SavingSystem')
+downloader.intro('SavingSystem', True)
 import SavingSystem
 
+downloader.intro('Handler2dEngine', False)
+import Handler2dEngine
 
-downloader.intro('wild_launcher')
+downloader.intro('wild_launcher', True)
 import wild_launcher
 
 

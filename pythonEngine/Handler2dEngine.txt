@@ -1,0 +1,7 @@
+import tkinter
+from tkinter import colorchooser
+
+Screen = tkinter.Tk()
+Screen.resizable(False, False)
+Screen.geometry("1920x1080")
+Screen.title('Hierarchy')

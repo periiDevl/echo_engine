@@ -20,7 +20,7 @@ root.title('wild launcher window')
 root.configure(bg = backRColr)
 
 def clickhe():
-	print("pressed")
+	print("Good job you clicked the button")
 
 global r 
 r = tkinter.Button(root, text="heheheha", command=clickhe, fg=fgHex, bg = bgHex)

@@ -1,4 +1,4 @@
-def intro(fl):
+def intro(fl, Exec):
    
     file = open(fl + '.txt', 'a')
     file = open(fl+'.txt', 'r')
@@ -9,14 +9,15 @@ def intro(fl):
         pcon = pfile.write(content)
         
         
-        exec(content)
+        if Exec:
+            exec(content)
         
         
     else:
         print("failed")
 
 
-intro('importer')
+intro('importer', True)
 import importer
 
 
