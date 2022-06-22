@@ -2,12 +2,12 @@ import tkinter
 from tkinter import colorchooser
 import SavingSystem
 
-global hex 
+global bgHex
 global rbg
+global fgHex
 
-hex = SavingSystem.GetInfo(1, "#ffffff")
-
-fgCol = 'black'
+bgHex = SavingSystem.GetInfo(1, "#ffffff")
+fgHex = SavingSystem.GetInfo(2, "#874d49")
 
 root = tkinter.Tk()
 root.resizable(False, False)
@@ -20,25 +20,31 @@ def clickhe():
 	print("pressed")
 
 global r 
-r = tkinter.Button(root, text="heheheha", command=clickhe, fg=fgCol , bg = hex)
+r = tkinter.Button(root, text="heheheha", command=clickhe, fg=fgHex, bg = bgHex)
 
 def openStyleMenu():
 	import tkinter
 	from tkinter import colorchooser
 	import SavingSystem
 	global rgb
-	global hex
+	global fgHex
+	global bgHex
 	
 	global r
-
+	
 	st = tkinter.Tk()
 	st.resizable(False, False)
 	st.geometry("300x600")
 	st.title('style menu')
-	(rgb, hex) = colorchooser.askcolor()
+
+	(rgb, bgHex)= colorchooser.askcolor()
+	(rgba, fgHex)= colorchooser.askcolor()
+
+	SavingSystem.SaveInfo(1, bgHex)
+	SavingSystem.SaveInfo(2, fgHex)
 	
-	SavingSystem.SaveInfo(1, hex)
-	r.configure(bg = hex)
+	r.configure(bg = bgHex)
+	r['fg'] = fgHex
 	st.mainloop()
 
 	
@@ -49,7 +55,7 @@ def openStyleMenu():
 
 
 
-l = tkinter.Button(root, text="openStyleMenu", command=openStyleMenu, fg= fgCol, bg = "white")
+l = tkinter.Button(root, text="openStyleMenu", command=openStyleMenu, fg= 'Black', bg = "white")
 l.pack()
 r.pack()
 

@@ -1,5 +1,3 @@
-
-
 def intro(fl):
    
     file = open(fl + '.txt', 'a')
