@@ -28,18 +28,16 @@ def base64ToText(b):
 
 def SaveInfo(line, info):
      from openpyxl import Workbook
-     sheet['B' + str(line)].value = (info)
-
+     sheet['B' + str(line)].value = textToBase64(info)
      book.save("Save_001.xlsx")
-
 
 def GetInfo(line, basicInfo):
      from openpyxl import Workbook
      #checking if there is anything in that line and if there isn't replacing it with basicInfo
      if (str(sheet['B' + str(line)].value) == "None"):
-          sheet['B' + str(line)].value = basicInfo
+          sheet['B' + str(line)].value = textToBase64(basicInfo)
           book.save("Save_001.xlsx")
           return basicInfo
      else:
-          info = sheet['B' + str(line)].value
+          info = base64ToText(sheet['B' + str(line)].value)
           return (info)
