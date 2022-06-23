@@ -11,7 +11,6 @@ bgHex = SavingSystem.GetInfo(1, "#ffffff")
 fgHex = SavingSystem.GetInfo(2, "#ffffff")
 backRColr = SavingSystem.GetInfo(3, "#ffffff")
 
-
 global root
 root = tkinter.Tk()
 root.resizable(False, False)
