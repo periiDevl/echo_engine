@@ -52,4 +52,5 @@ def ResetColorImage(filepath, beforecolor):
      path = path.replace(pathDot, "")
      os.remove(filepath)
      picture.save(path + "ByColor.png")
-ChangeColorImage("spaceship.png", (63, 72,204))
+
+ChangeColorImage("spaceship.png", (0, 0, 255))

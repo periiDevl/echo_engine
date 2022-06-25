@@ -80,15 +80,20 @@ def handleBullets(red, yellow ,RedShot, YellowShot, red_bullets,yellow_bullets):
      for b in yellow_bullets:
           b.x += bulletVel
           if red.colliderect(b) or  b.x > WIDTH + b.width or b.x < 0:
-               if red.colliderect(b):
-                    pygame.event.post(pygame.event.Event(RedHit))
+               pygame.event.post(pygame.event.Event(RedHit))
                yellow_bullets.remove(b)
      for b in red_bullets:
           b.x -= bulletVel
           if yellow.colliderect(b) or  b.x > WIDTH + b.width or b.x < 0:
                if yellow.colliderect(b):
                     pygame.event.post(pygame.event.Event(YellowHit))
-               red_bullets.remove(b)          
+                    red_bullets.remove(b)
+
+     for RedB in red_bullets:
+          for YellowB in yellow_bullets:
+               if YellowB.colliderrect(RedB):
+                    yellow_bullets.remove(YellowB)
+                    red_bullets.remove(RedB)
 def main():
      red = pygame.Rect(WIDTH-55, 300, SPACESHIP_WIDTH, SPACESHIP_HEIGHT)
      yellow = pygame.Rect(0, 300, SPACESHIP_WIDTH, SPACESHIP_HEIGHT)
