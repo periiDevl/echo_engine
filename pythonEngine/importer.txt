@@ -16,6 +16,18 @@ import SavingSystem
 downloader.intro('Handler2dEngine', False)
 import Handler2dEngine
 
+downloader.intro('basicFunctions', False)
+import basicFunctions
+
+downloader.intro("PygameTemplate", True)
+import PygameTemplate
+
+downloader.intro('SceneHandler', False)
+import SceneHandler
+
+downloader.intro('ObjectPython', False)
+import ObjectPython
+
 downloader.intro('wild_launcher', True)
 import wild_launcher
 
