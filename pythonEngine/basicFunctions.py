@@ -51,6 +51,12 @@ def ResetColorImage(filepath, beforecolor):
                pathDot += c
      path = path.replace(pathDot, "")
      os.remove(filepath)
-     picture.save(path + "ByColor.png")
+     picture.save(path + "changed.png")
 
-ChangeColorImage("spaceship.png", (0, 0, 255))
+def HexToRGB(h):
+     value = h.lstrip('#')
+     lv = len(value)
+     return tuple(int(value[i:i+lv//3], 16) for i in range(0, lv, lv//3))
+def RgbToHEX(rgb):
+     return '#' + '%02x%02x%02x' % rgb
+     

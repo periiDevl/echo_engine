@@ -1,8 +1,8 @@
 import basicFunctions
 import ObjectPython
+from SavingSystemUpgrade import SaveLoadSystem
 
-SceneObjects = [ObjectPython.Object(),ObjectPython.Object()]
-SceneObjects[0].name = "New Object"
-SceneObjects[1].name = "Another Object"
-SceneObjects[0].layer = 1
-SceneObjects[1].layer = 0
+saveloadmanager = SaveLoadSystem(".save", "save_data_folder")
+
+SceneObjects = saveloadmanager.load_game_data(["Objects"], [[ObjectPython.Object()]])
+saveloadmanager.save_game_data([SceneObjects], ["Objects"])

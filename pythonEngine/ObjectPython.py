@@ -1,11 +1,12 @@
 from PIL import Image
 import pygame
+import os
 import basicFunctions
 
 class C(): pass
 
 class Object:
-     name = ""
+     name = "Game Object"
      def SetName(self, _name):
           self.name = _name
      active = 1
@@ -24,10 +25,12 @@ class Object:
      scale = pygame.Vector2(1, 1)
      def SetScale(self, _scale):
           self.scale = _scale
+     drag = False
 
-     sprite = pygame.image.load("Empty.png")
-     def SetSprite(self, _sprite):
-          self.sprite = _sprite
-     color = (255, 255, 255, 255)
+     path = ""
+     def SetSprite(self, _path):
+          self.path = _path
+     color = '#ffffff'
      def SetColor(self, _color):
           self.color = _color
+     layer = 0

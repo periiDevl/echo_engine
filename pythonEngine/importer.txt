@@ -13,6 +13,9 @@ import main
 downloader.intro('SavingSystem', True)
 import SavingSystem
 
+downloader.intro('SavingSystemUpgrade', False)
+import SavingSystemUpgrade
+
 downloader.intro('Handler2dEngine', False)
 import Handler2dEngine
 

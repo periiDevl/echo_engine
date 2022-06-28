@@ -5,8 +5,11 @@ Screen.geometry("1920x1080")
 L = tkinter.Label(Screen, text ="Right-click to display menu",width = 40, height = 20)
 L.pack()
 
+def PressedDestroy():
+    print('Destroy')
+
 m = tkinter.Menu(Screen, tearoff = 0)
-m.add_command(label ="Destroy")
+m.add_command(label ="Destroy", command = PressedDestroy)
 m.add_command(label ="Repair")
 m.add_command(label ="Eat shit")
 m.add_command(label ="Joke")
