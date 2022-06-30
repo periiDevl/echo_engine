@@ -1,6 +1,3 @@
-from cmath import sqrt
-from pyexpat import model
-from turtle import color, position
 import pygame as pg
 from OpenGL.GL import *
 from OpenGL.GL.shaders import compileProgram,compileShader
@@ -24,7 +21,6 @@ class Light:
         self.position = np.array(position, dtype=np.float32)
         self.color = np.array(color, dtype=np.float32)
         self.strength = strength
-        
 
 class Player:
 
@@ -60,20 +56,21 @@ class Scene:
 
         self.cubes = [
             SimpleComponent(
-                position = [6,0,0],
-                eulers = [0,0,0]
-            ),
-        ]
-        self.medkits = [
-            SimpleComponent(
-                position = [3,0,0.5],
+                position = [6,0,1],
                 eulers = [0,0,0]
             ),
         ]
 
+        self.medkits = [
+            SimpleComponent(
+                position = [3,0,0.5],
+                eulers = [0,0,0]
+            )
+        ]
+
         self.lights = [
             Light(
-                 position = [
+                position = [
                     1, 1, 1
                 ],
                 color = [
@@ -81,8 +78,7 @@ class Scene:
                 ],
                 strength = 3
             )
-            for i in range(10)
-            
+            for i in range(8)
         ]
 
         self.player = Player(
@@ -246,56 +242,28 @@ class GraphicsEngine:
         pg.mouse.set_visible(False)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
-
-        
         pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK,
-                                    pg.GL_CONTEXT_PROFILE_CORE) 
+                                    pg.GL_CONTEXT_PROFILE_CORE)
         pg.display.set_mode((640,480), pg.OPENGL|pg.DOUBLEBUF)
+
         #initialise opengl
         glClearColor(0.0, 0.0, 0.0, 1)
-        self.shader = self.createShader("D:/git/revolver-lite/pythonEngine/shaders/vertex.txt", "D:/git/revolver-lite/pythonEngine/shaders/fragment.txt")
-        glUseProgram(self.shader)
-        glUniform1i(glGetUniformLocation(self.shader, "D:/git/revolver-lite/pythonEngine/pythonEngine/imageTexture"), 0)
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
+        #create renderpasses and resources
+        shader = self.createShader("D:/git/revolver-lite/pythonEngine/shaders/vertex.txt", "D:/git/revolver-lite/pythonEngine/shaders/fragment.txt")
+        self.texturedLitPass = RenderPassTexturedLit3D(shader)
         self.wood_texture = Material("D:/git/revolver-lite/pythonEngine/gfx/woodrte.jpg")
-        self.cube_mesh = Mesh("D:/git/revolver-lite/pythonEngine/models/n.obj")
-
+        self.cube_mesh = Mesh("D:/git/revolver-lite/pythonEngine/models/monkey.obj")
         self.medkit_texture = Material("D:/git/revolver-lite/pythonEngine/gfx/woodrte.jpg")
-        self.medkit_billboard = BillBoard(w = 0.5, h = 0.5)
+        self.medkit_billboard = BillBoard(w = 0.6, h = 0.5)
 
+        shader = self.createShader("D:/git/revolver-lite/pythonEngine/shaders/vertex_light.txt", "D:/git/revolver-lite/pythonEngine/shaders/fragment_light.txt")
+        self.texturedPass = RenderPassTextured3D(shader)
         self.light_texture = Material("D:/git/revolver-lite/pythonEngine/gfx/lightPlaceHolder.png")
-        self.light_billboard = BillBoard(w = 0.8, h = 0.8)
-
-        projection_transform = pyrr.matrix44.create_perspective_projection(
-            fovy = 45, aspect = 640/480, 
-            near = 0.1, far = 50, dtype=np.float32
-        )
-        glUniformMatrix4fv(
-            glGetUniformLocation(self.shader,"projection"),
-            1, GL_FALSE, projection_transform
-        )
-        self.modelMatrixLocation = glGetUniformLocation(self.shader, "model")
-        self.viewMatrixLocation = glGetUniformLocation(self.shader, "view")
-        self.lightLocation = {
-            "position": [
-                glGetUniformLocation(self.shader, f"Lights[{i}].position")
-                for i in range(10)
-            ],
-            "color": [
-                glGetUniformLocation(self.shader, f"Lights[{i}].color")
-                for i in range(10)
-            ],
-            "strength": [
-                glGetUniformLocation(self.shader, f"Lights[{i}].strength")
-                for i in range(10)
-            ]
-        }
-        self.cameraPosLoc = glGetUniformLocation(self.shader, "cameraPostion")
-        self.tintLoc = glGetUniformLocation(self.shader, "tint")
-    
+        self.light_billboard = BillBoard(w = 0.2, h = 0.1)
     
     def createShader(self, vertexFilepath, fragmentFilepath):
 
@@ -314,6 +282,63 @@ class GraphicsEngine:
 
         #refresh screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        self.texturedLitPass.render(scene, self)
+
+        self.texturedPass.render(scene, self)
+
+        pg.display.flip()
+
+    def destroy(self):
+
+        self.cube_mesh.destroy()
+        self.wood_texture.destroy()
+        self.medkit_billboard.destroy()
+        self.medkit_texture.destroy()
+        self.light_billboard.destroy()
+        self.light_texture.destroy()
+        self.texturedLitPass.destroy()
+        self.texturedPass.destroy()
+        pg.quit()
+
+class RenderPassTexturedLit3D:
+
+
+    def __init__(self, shader):
+
+        #initialise opengl
+        self.shader = shader
+        glUseProgram(self.shader)
+        glUniform1i(glGetUniformLocation(self.shader, "imageTexture"), 0)
+
+        projection_transform = pyrr.matrix44.create_perspective_projection(
+            fovy = 45, aspect = 640/480, 
+            near = 0.1, far = 50, dtype=np.float32
+        )
+        glUniformMatrix4fv(
+            glGetUniformLocation(self.shader,"projection"),
+            1, GL_FALSE, projection_transform
+        )
+        self.modelMatrixLocation = glGetUniformLocation(self.shader, "model")
+        self.viewMatrixLocation = glGetUniformLocation(self.shader, "view")
+        self.lightLocation = {
+            "position": [
+                glGetUniformLocation(self.shader, f"Lights[{i}].position")
+                for i in range(8)
+            ],
+            "color": [
+                glGetUniformLocation(self.shader, f"Lights[{i}].color")
+                for i in range(8)
+            ],
+            "strength": [
+                glGetUniformLocation(self.shader, f"Lights[{i}].strength")
+                for i in range(8)
+            ]
+        }
+        self.cameraPosLoc = glGetUniformLocation(self.shader, "cameraPostion")
+
+    def render(self, scene, engine):
+
         glUseProgram(self.shader)
 
         view_transform = pyrr.matrix44.create_look_at(
@@ -323,42 +348,12 @@ class GraphicsEngine:
         )
         glUniformMatrix4fv(self.viewMatrixLocation, 1, GL_FALSE, view_transform)
 
-        
-        for i, light, in enumerate(scene.lights):
+        glUniform3fv(self.cameraPosLoc, 1, scene.player.position)
+
+        for i,light in enumerate(scene.lights):
             glUniform3fv(self.lightLocation["position"][i], 1, light.position)
             glUniform3fv(self.lightLocation["color"][i], 1, light.color)
             glUniform1f(self.lightLocation["strength"][i], light.strength)
-        glUniform3fv(self.cameraPosLoc, 1, scene.player.position)
-
-        for light in scene.lights:
-            self.light_texture.use()
-            glUniform3fv(self.tintLoc, 1, light.color)
-            directionFromPlayer = light.position - scene.player.position
-            angle1 = np.arctan2(-directionFromPlayer[1], directionFromPlayer[0])
-            dist2d = math.sqrt(directionFromPlayer[0]**2 + directionFromPlayer[1]**2)
-            angle2 = np.arctan2(directionFromPlayer[2], dist2d)
-
-            model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
-            model_transform = pyrr.matrix44.multiply(
-                model_transform,
-                pyrr.matrix44.create_from_y_rotation(theta=angle2, dtype=np.float32)
-            )
-
-            model_transform = pyrr.matrix44.multiply(
-                model_transform,
-                pyrr.matrix44.create_from_z_rotation(theta=angle1, dtype=np.float32)
-            )
-
-            model_transform = pyrr.matrix44.multiply(
-                model_transform,
-                pyrr.matrix44.create_from_translation(vec =light.position, dtype=np.float32)
-            )
-
-            glUniformMatrix4fv(self.modelMatrixLocation, 1, GL_FALSE, model_transform)
-            glBindVertexArray(self.light_billboard.vao)
-            glDrawArrays(GL_TRIANGLES, 0, self.light_billboard.vertex_count)
-
-        glUniform3fv(self.tintLoc, 1, np.array([1,1,1], dtype=np.float32))
 
         for cube in scene.cubes:
 
@@ -376,49 +371,105 @@ class GraphicsEngine:
                 )
             )
             glUniformMatrix4fv(self.modelMatrixLocation,1,GL_FALSE,model_transform)
-            self.wood_texture.use()
-            glBindVertexArray(self.cube_mesh.vao)
-            glDrawArrays(GL_TRIANGLES, 0, self.cube_mesh.vertex_count)
-
+            engine.wood_texture.use()
+            glBindVertexArray(engine.cube_mesh.vao)
+            glDrawArrays(GL_TRIANGLES, 0, engine.cube_mesh.vertex_count)
+        
         for medkit in scene.medkits:
-            self.medkit_texture.use()
+
+            engine.medkit_texture.use()
+
             directionFromPlayer = medkit.position - scene.player.position
-            angle1 = np.arctan2(-directionFromPlayer[1], directionFromPlayer[0])
-            dist2d = math.sqrt(directionFromPlayer[0]**2 + directionFromPlayer[1]**2)
-            angle2 = np.arctan2(directionFromPlayer[2], dist2d)
+            angle1 = np.arctan2(-directionFromPlayer[1],directionFromPlayer[0])
+            dist2d = math.sqrt(directionFromPlayer[0] ** 2 + directionFromPlayer[1] ** 2)
+            angle2 = np.arctan2(directionFromPlayer[2],dist2d)
 
             model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
             model_transform = pyrr.matrix44.multiply(
                 model_transform,
                 pyrr.matrix44.create_from_y_rotation(theta=angle2, dtype=np.float32)
             )
-
             model_transform = pyrr.matrix44.multiply(
                 model_transform,
                 pyrr.matrix44.create_from_z_rotation(theta=angle1, dtype=np.float32)
             )
-
             model_transform = pyrr.matrix44.multiply(
                 model_transform,
-                pyrr.matrix44.create_from_translation(vec =medkit.position, dtype=np.float32)
+                pyrr.matrix44.create_from_translation(medkit.position,dtype=np.float32)
             )
+            glUniformMatrix4fv(glGetUniformLocation(self.shader,"model"),1,GL_FALSE,model_transform)
 
-            glUniformMatrix4fv(self.modelMatrixLocation, 1, GL_FALSE, model_transform)
-            glBindVertexArray(self.medkit_billboard.vao)
-            glDrawArrays(GL_TRIANGLES, 0, self.medkit_billboard.vertex_count)
-
-        pg.display.flip()
+            glBindVertexArray(engine.medkit_billboard.vao)
+            glDrawArrays(GL_TRIANGLES, 0, engine.medkit_billboard.vertexCount)
 
     def destroy(self):
 
-        self.cube_mesh.destroy()
-        self.wood_texture.destroy()
-        self.medkit_billboard.destroy()
-        self.medkit_texture.destroy()
-        self.light_billboard.destroy()
-        self.light_texture.destroy()
         glDeleteProgram(self.shader)
-        pg.quit()
+
+class RenderPassTextured3D:
+
+
+    def __init__(self, shader):
+
+        #initialise opengl
+        self.shader = shader
+        glUseProgram(self.shader)
+
+        projection_transform = pyrr.matrix44.create_perspective_projection(
+            fovy = 45, aspect = 640/480, 
+            near = 0.1, far = 50, dtype=np.float32
+        )
+        glUniformMatrix4fv(
+            glGetUniformLocation(self.shader,"projection"),
+            1, GL_FALSE, projection_transform
+        )
+        self.modelMatrixLocation = glGetUniformLocation(self.shader, "model")
+        self.viewMatrixLocation = glGetUniformLocation(self.shader, "view")
+        self.tintLoc = glGetUniformLocation(self.shader, "tint")
+    
+    def render(self, scene, engine):
+
+        glUseProgram(self.shader)
+
+        view_transform = pyrr.matrix44.create_look_at(
+            eye = scene.player.position,
+            target = scene.player.position + scene.player.forwards,
+            up = scene.player.up, dtype = np.float32
+        )
+        glUniformMatrix4fv(self.viewMatrixLocation, 1, GL_FALSE, view_transform)
+        
+        for i,light in enumerate(scene.lights):
+
+            glUniform3fv(self.tintLoc, 1, light.color)
+
+            engine.light_texture.use()
+
+            directionFromPlayer = light.position - scene.player.position
+            angle1 = np.arctan2(-directionFromPlayer[1],directionFromPlayer[0])
+            dist2d = math.sqrt(directionFromPlayer[0] ** 2 + directionFromPlayer[1] ** 2)
+            angle2 = np.arctan2(directionFromPlayer[2],dist2d)
+
+            model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
+            model_transform = pyrr.matrix44.multiply(
+                model_transform,
+                pyrr.matrix44.create_from_y_rotation(theta=angle2, dtype=np.float32)
+            )
+            model_transform = pyrr.matrix44.multiply(
+                model_transform,
+                pyrr.matrix44.create_from_z_rotation(theta=angle1, dtype=np.float32)
+            )
+            model_transform = pyrr.matrix44.multiply(
+                model_transform,
+                pyrr.matrix44.create_from_translation(light.position,dtype=np.float32)
+            )
+            glUniformMatrix4fv(glGetUniformLocation(self.shader,"model"),1,GL_FALSE,model_transform)
+
+            glBindVertexArray(engine.light_billboard.vao)
+            glDrawArrays(GL_TRIANGLES, 0, engine.light_billboard.vertexCount)
+
+    def destroy(self):
+
+        glDeleteProgram(self.shader)
 
 class Mesh:
 
@@ -547,11 +598,13 @@ class Material:
         glDeleteTextures(1, (self.texture,))
 
 class BillBoard:
+
+
     def __init__(self, w, h):
+
         #x,y,z, s,t, normal
 
         self.vertices = (
-
             0, -w/2,  h/2, 0, 0, -1, 0, 0,
             0, -w/2, -h/2, 0, 1, -1, 0, 0,
             0,  w/2, -h/2, 1, 1, -1, 0, 0,
@@ -560,10 +613,9 @@ class BillBoard:
             0,  w/2, -h/2, 1, 1, -1, 0, 0,
             0,  w/2,  h/2, 1, 0, -1, 0, 0
         )
-        self.vertex_count = 6
         self.vertices = np.array(self.vertices, dtype=np.float32)
         self.vertexCount = 6
-
+        
         self.vao = glGenVertexArrays(1)
         glBindVertexArray(self.vao)
         self.vbo = glGenBuffers(1)
@@ -578,9 +630,9 @@ class BillBoard:
 
         glEnableVertexAttribArray(2)
         glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(20))
-
+    
     def destroy(self):
         glDeleteVertexArrays(1, (self.vao,))
-        glDeleteBuffers(1,(self.vbo,))
+        glDeleteBuffers(1, (self.vbo,))
 
 myApp = App(800,600)
