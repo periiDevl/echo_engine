@@ -15,9 +15,9 @@ from functools import *
 class Mesh:
 
     
-    def __init__(self, filename):
+    def __init__(self, filename, objectsize):
         # x, y, z, s, t, nx, ny, nz
-        self.vertices = self.loadMesh(filename)
+        self.vertices = self.loadMesh(filename, objectsize)
         self.vertex_count = len(self.vertices)//8
         self.vertices = np.array(self.vertices, dtype=np.float32)
 
@@ -36,7 +36,7 @@ class Mesh:
         glEnableVertexAttribArray(2)
         glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(20))
    
-    def loadMesh(self, filename):
+    def loadMesh(self, filename, objsize):
 
         #raw, unassembled data
         v = []
@@ -57,6 +57,7 @@ class Mesh:
                     line = line.replace("v ","")
                     line = line.split(" ")
                     l = [float(x) for x in line]
+                    
                     v.append(l)
                 elif flag=="vt":
                     #texture coordinate
@@ -82,6 +83,7 @@ class Mesh:
                     for vertex in line:
                         #break out into [v,vt,vn],
                         #correct for 0 based indexing.
+                        
                         l = vertex.split("/")
                         position = int(l[0]) - 1
                         faceVertices.append(v[position])
@@ -103,7 +105,7 @@ class Mesh:
                         vertex_order.append(i+2)
                     for i in vertex_order:
                         for x in faceVertices[i]:
-                            vertices.append(x)
+                            vertices.append(x * objsize)
                         for x in faceTextures[i]:
                             vertices.append(x)
                         for x in faceNormals[i]:
@@ -406,6 +408,7 @@ class GraphicsEngine:
 
         #initialise opengl
         glClearColor(0.0, 0.0, 0.0, 1)
+        
         glEnable(GL_DEPTH_TEST)
         #glEnable(GL_CULL_FACE)
         #glCullFace(GL_BACK)
@@ -419,8 +422,8 @@ class GraphicsEngine:
         
 
         self.wood_texture = Material("D:/git/revolver-lite/pythonEngine/gfx/woodrte.jpg")
-        self.cube_mesh = Mesh("D:/git/revolver-lite/pythonEngine/models/room3.obj")
-        self.ca = Mesh("D:/git/revolver-lite/pythonEngine/models/monkey.obj")
+        self.cube_mesh = Mesh("D:/git/revolver-lite/pythonEngine/models/room3.obj", 1)
+        self.ca = Mesh("D:/git/revolver-lite/pythonEngine/models/monkey.obj", 3)
         self.medkit_texture = Material("D:/git/revolver-lite/pythonEngine/gfx/woodrte.jpg")
         self.medkit_billboard = BillBoard(w = 0.6, h = 0.5)
 
@@ -646,6 +649,7 @@ class RenderPassTextured3D:
             glUniformMatrix4fv(glGetUniformLocation(self.shader,"model"),1,GL_FALSE,model_transform)
 
             glBindVertexArray(engine.light_billboard.vao)
+            
             glDrawArrays(GL_TRIANGLES, 0, engine.light_billboard.vertexCount)
     @lru_cache(maxsize=None)
     def destroy(self):
