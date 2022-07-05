@@ -1,5 +1,4 @@
 
-
 from typing_extensions import Self
 import pygame as pg
 from OpenGL.GL import *
@@ -8,6 +7,9 @@ import numpy as np
 import pyrr
 import math
 from functools import *
+
+
+
 
 
 class Mesh:
@@ -121,8 +123,10 @@ class SimpleComponent:
         self.position = np.array(position, dtype=np.float32)
         self.eulers = np.array(eulers, dtype=np.float32)
         
+
     
-#NonScriptableObjects = [SimpleComponent(mesh = 'D:/git/revolver-lite/pythonEngine/models/room3.obj' ,position = [6,0,1], eulers = [0,0,0]), SimpleComponent(mesh = 'D:/git/revolver-lite/pythonEngine/models/monkey.obj')]
+    
+
 class Light:
 
 
@@ -131,6 +135,7 @@ class Light:
         self.position = np.array(position, dtype=np.float32)
         self.color = np.array(color, dtype=np.float32)
         self.strength = strength
+        
 
 class Player:
 
@@ -159,6 +164,15 @@ class Player:
 
         self.up = np.cross(self.right, self.forwards)
 
+
+global beforePosx
+beforePosx = 0
+
+global beforePosz
+beforePosz = 0
+
+global beforePosy
+beforePosy = 0
 class Scene:
 
     
@@ -183,18 +197,57 @@ class Scene:
             )
             for i in range(1)
         ]
-
         self.player = Player(
-            position = [0,0,2]
+            position = [1,1,1]
+            
         )
-
+    
     def update(self, rate):
-        pass
+        global beforePosx
+        global beforePosz
+        global beforePosy
+        self.gravity = 0.01
+        self.jumpForce = 300
+        self.floor = -7
+        self.wall = 3
+        self.wallz = 3
+        self.wally = -7.01
+        if self.player.position[2] < self.floor:
+            #self.gravity = -0.01
+            self.is_grounded = True
+
+        else:
+            self.player.position[2] = self.player.position[2] - self.gravity
+            self.is_grounded = False
         #for cube in self.cubes:
+        
          #   cube.eulers[1] += 0.25 * rate
           #  if cube.eulers[1] > 360:
            #     cube.eulers[1] -= 360
+        if self.player.position[1] > self.wall or self.player.position[1] < -self.wall:
+            self.player.position[1] = beforePosx
+            print("colide")
 
+        else:
+            beforePosx = self.player.position[1]
+            print("notColide")
+
+        if self.player.position[0] > self.wallz or self.player.position[0] < -self.wallz:
+            self.player.position[0] = beforePosz
+            print("colide")
+            
+        else:
+            beforePosz = self.player.position[0]
+            print("notColide")
+
+
+
+        keys = pg.key.get_pressed()
+        if keys[pg.K_SPACE] and self.is_grounded:
+            self.player.position[2] = self.player.position[2] + self.gravity * self.jumpForce
+            
+       
+        
     def move_player(self, dPos):
 
         dPos = np.array(dPos, dtype = np.float32)
@@ -236,6 +289,7 @@ class App:
     def mainLoop(self):
         running = True
         while (running):
+            
             #check events
             for event in pg.event.get():
                 if (event.type == pg.QUIT):
@@ -243,6 +297,7 @@ class App:
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_ESCAPE:
                         running = False
+               
             
             self.handleKeys()
             self.handleMouse()
@@ -304,8 +359,8 @@ class App:
                 directionModifier = 315
             
             dPos = [
-                self.frameTime * 0.025 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
-                self.frameTime * 0.025 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
+                self.frameTime * 0.003 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
+                self.frameTime * 0.003 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
                 0
             ]
 
@@ -452,7 +507,7 @@ class RenderPassTexturedLit3D:
     #cant cache
     def render(self, scene, engine):
         
-
+        
         glUseProgram(self.shader)
 
         view_transform = pyrr.matrix44.create_look_at(
@@ -469,7 +524,7 @@ class RenderPassTexturedLit3D:
             glUniform3fv(self.lightLocation["color"][i], 1, light.color)
             glUniform1f(self.lightLocation["strength"][i], light.strength)
        
-        NonScriptableObjects = [SimpleComponent(mesh = engine.ca,position = [6,0,1], eulers = [0,0,0]),SimpleComponent(mesh = engine.ca,position = [6,0,1], eulers = [0,0,0]), ]
+        NonScriptableObjects = [SimpleComponent(mesh = engine.ca,position = [6,0,1], eulers = [0,0,0]), ]
         def createNonObjects():
 
             for nonscriptname in NonScriptableObjects:
@@ -504,6 +559,7 @@ class RenderPassTexturedLit3D:
             engine.medkit_texture.use()
 
             directionFromPlayer = medkit.position - scene.player.position
+            wallpos = medkit.position
             angle1 = np.arctan2(-directionFromPlayer[1],directionFromPlayer[0])
             dist2d = math.sqrt(directionFromPlayer[0] ** 2 + directionFromPlayer[1] ** 2)
             angle2 = np.arctan2(directionFromPlayer[2],dist2d)
@@ -522,6 +578,7 @@ class RenderPassTexturedLit3D:
                 pyrr.matrix44.create_from_translation(medkit.position,dtype=np.float32)
             )
             glUniformMatrix4fv(glGetUniformLocation(self.shader,"model"),1,GL_FALSE,model_transform)
+
 
             glBindVertexArray(engine.medkit_billboard.vao)
             glDrawArrays(GL_TRIANGLES, 0, engine.medkit_billboard.vertexCount)
@@ -554,7 +611,7 @@ class RenderPassTextured3D:
     def render(self, scene, engine):
 
         glUseProgram(self.shader)
-
+        playerpos = scene.player.position
         view_transform = pyrr.matrix44.create_look_at(
             eye = scene.player.position,
             target = scene.player.position + scene.player.forwards,
@@ -595,10 +652,6 @@ class RenderPassTextured3D:
 
         glDeleteProgram(self.shader)
 
-
-    
-    
-
 class Material:
 
     
@@ -621,8 +674,6 @@ class Material:
     
     def destroy(self):
         glDeleteTextures(1, (self.texture,))
-
-
 
 class BillBoard:
     @lru_cache(maxsize=None)
