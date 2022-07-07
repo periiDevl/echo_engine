@@ -445,6 +445,12 @@ def HeirarchyOpen():
 	
 HeirarchyOpen()
 ##### Basic Menu
+def DestroyObject():
+        global InspecID, SceneObjects
+        Obj = GetObjectByID(InspecID)
+        SceneObjects.remove(Obj)
+        HeirarchyRefresh()
+        HeirarchyWin.title("Heirarchy*")
 
 def CopyObject():
         global InspecID
@@ -453,7 +459,7 @@ def CopyObject():
 def PasteObject():
         global InspecID, SceneObjects
         if "Object10" not in pyperclip.paste():
-                return;
+                return
         DesiObjId = pyperclip.paste().replace('Object10', "") 
         DesiObj = GetObjectByID(DesiObjId)
         objIndex = SceneObjects.index(DesiObj)
@@ -478,6 +484,7 @@ m.add_command(label ="Create an object", command=CreateObject)
 m.add_command(label ="Copy", command=CopyObject)
 m.add_command(label ="Paste", command=PasteObject)
 m.add_command(label ="Reload",command=HeirarchyRefresh)
+m.add_command(label ="Create an object", command=DestroyObject)
 #m.add_separator()
 #m.add_command(label ="Rename")
 
@@ -487,6 +494,38 @@ m.add_command(label ="Reload",command=HeirarchyRefresh)
 ### stop Heirarchy Window
 
 ### Scene Management
+run = True
+
+##### Save popup
+
+global PopupSave
+def QuitWithoutSave():
+        global run
+        run = False
+def SavePopup():
+        global HeirarchyWin, run
+        print(HeirarchyWin.title())
+        if "*" not in HeirarchyWin.title():
+                run = False
+                return
+        from tkinter.messagebox import showinfo
+        PopupSave = tkinter.Tk()
+        PopupSave.geometry("350x150")
+        PopupSave.wm_title("Save Check")
+
+        l = tkinter.Label(PopupSave, text="Are you sure you wanna quit?\n You have unsaved changes", font=("Ariel", 18))
+        l.pack(side=tkinter.TOP)
+
+        b = tkinter.Button(PopupSave, text="Yes", command=QuitWithoutSave,font=("Ariel", 15), height=3, width=12)
+        b.pack(side=tkinter.LEFT)
+        b = tkinter.Button(PopupSave, text="No", command=PopupSave.destroy,font=("Ariel", 15), height=3, width=12)
+        b.pack(side=tkinter.RIGHT)
+
+
+##### End Save popup
+
+global DragOffset
+
 def DrawEveryChar():
         for SceneO in SceneObjects:
                 if (SceneO.path != ""):
@@ -497,7 +536,9 @@ def DrawEveryChar():
                         ObjRect = ObjSprite.get_rect(center = ObjSprite.get_rect(center = (SceneO.position.x,SceneO.position.y)).center)
                         Scene.blit(ObjSprite, ObjRect)
 
+
 def HandleSceneObjects(event, mx, my):
+        global DragOffset
         if event.type == pygame.MOUSEBUTTONDOWN:
                 if  event.button == 1:
                         for SceneO in SceneObjects:
@@ -509,6 +550,8 @@ def HandleSceneObjects(event, mx, my):
                                 
                                 if Collider.collidepoint((mx, my)):                        
                                         SceneO.drag = True
+                                        DragOffset = SceneO.position - (mx, my)
+                                        HeirarchyWin.title("Heirarchy*")
                                         return
                                 else:
                                         SceneO.drag = False
@@ -545,9 +588,9 @@ mouseX, mouseY = 0, 0
 
 FPS = 150
 def main():
+        global run, DragOffset
         clock = pygame.time.Clock()
         global ObjectDraggedID
-        run = True
         while run:
                 clock.tick(FPS)
                 pygame.display.set_caption(("Scene " + str(clock.get_fps())))
@@ -558,13 +601,14 @@ def main():
                 for event in pygame.event.get():
                         HandleSceneObjects(event, mouseX, mouseY)
                         if event.type == pygame.QUIT:
-                                global exitNum
-                                run = False
+                                SavePopup()
                 for obj in SceneObjects:
                         if (obj.drag):
-                                obj.SetPos(pygame.Vector2(mouseX, mouseY))
-                                PosX.set(mouseX)
-                                PosY.set(mouseY)
+                                print(DragOffset)
+                                dragPos = pygame.Vector2(mouseX+DragOffset[0], mouseY+DragOffset[1])
+                                obj.SetPos(dragPos)
+                                PosX.set(dragPos[0])
+                                PosY.set(dragPos[1])
                 
                 Scene.fill(bgColor)
                 DrawEveryChar()

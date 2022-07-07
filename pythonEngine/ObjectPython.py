@@ -6,6 +6,7 @@ import basicFunctions
 class C(): pass
 
 class Object:
+### Object Info
      name = "Game Object"
      def SetName(self, _name):
           self.name = _name
@@ -13,7 +14,7 @@ class Object:
      def SetActive(self, _active):
           self.active = _active
      thisId = 0
-          
+### Transform
      def __init__(self):
           self.thisId = id(self)
      position = pygame.Vector2(int(0), int(0))
@@ -26,11 +27,31 @@ class Object:
      def SetScale(self, _scale):
           self.scale = _scale
      drag = False
-
+### Sprite Renderer
      path = ""
      def SetSprite(self, _path):
           self.path = _path
      color = '#ffffff'
      def SetColor(self, _color):
           self.color = _color
-     layer = 0
+     rendererlayer = 0
+### Collider
+     polcolliderpoints = []
+     collsiondepth = 1
+     def SetColDepth(self, _collisiondepth):
+          self.collsiondepth = _collisiondepth
+     radius = 5
+     def SetColRadius(self, _Radius):
+          self.radius = _Radius
+     PolColOffset, CirColOffset, RectColOffset = (0,0), (0,0), (0,0)
+
+
+     def SetPolColOffset(self, _Offset):
+          self.PolColOffset = _Offset
+
+     def SetCirColOffset(self, _Offset):
+          self.CirColOffset = _Offset
+
+     def SetRectColOffset(self, _Offset):
+          self.RectColOffset = _Offset
+     
