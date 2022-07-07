@@ -1,4 +1,5 @@
 
+from turtle import pos
 from typing_extensions import Self
 import pygame as pg
 from OpenGL.GL import *
@@ -6,6 +7,8 @@ from OpenGL.GL.shaders import compileProgram,compileShader
 import numpy as np
 import pyrr
 import math
+import random
+
 from functools import *
 
 
@@ -15,9 +18,9 @@ from functools import *
 class Mesh:
 
     
-    def __init__(self, filename, objectsize):
+    def __init__(self, filename, objectsize, texSize):
         # x, y, z, s, t, nx, ny, nz
-        self.vertices = self.loadMesh(filename, objectsize)
+        self.vertices = self.loadMesh(filename, objectsize, texSize)
         self.vertex_count = len(self.vertices)//8
         self.vertices = np.array(self.vertices, dtype=np.float32)
 
@@ -36,7 +39,7 @@ class Mesh:
         glEnableVertexAttribArray(2)
         glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(20))
    
-    def loadMesh(self, filename, objsize):
+    def loadMesh(self, filename, objsize, texCoord):
 
         #raw, unassembled data
         v = []
@@ -107,7 +110,7 @@ class Mesh:
                         for x in faceVertices[i]:
                             vertices.append(x * objsize)
                         for x in faceTextures[i]:
-                            vertices.append(x)
+                            vertices.append(x * texCoord)
                         for x in faceNormals[i]:
                             vertices.append(x)
                 line = f.readline()
@@ -120,11 +123,12 @@ class Mesh:
 class SimpleComponent:
 
     
-    def __init__(self, mesh, position, eulers):
+    def __init__(self, mesh, tex ,position, eulers):
         self.mesh = mesh
+        self.tex = tex
         self.position = np.array(position, dtype=np.float32)
         self.eulers = np.array(eulers, dtype=np.float32)
-        
+    
 
     
     
@@ -162,6 +166,7 @@ class Player:
 
         globalUp = np.array([0,0,1], dtype=np.float32)
 
+        
         self.right = np.cross(self.forwards, globalUp)
 
         self.up = np.cross(self.right, self.forwards)
@@ -182,39 +187,42 @@ class Scene:
         self.medkits = [
             SimpleComponent(
                 mesh = 'monkey',
+                tex ='monkeu'
+                ,
                 position = [3,0,0.5],
                 eulers = [0,0,0]
             )
         ]
 
         self.lights = [
+           Light(
+                position = [1, 4, -4],
+                color = (1, 1, 1), strength= 3
+                
+            ),
             Light(
-                position = [
-                    1, 1, 1
-                ],
-                color = [
-                    0.9, 0.9, 0.9
-                ],
-                strength = 3
+                position = [1, 1, -4],
+                color = (1, 1, 1), strength= 3
             )
-            for i in range(1)
+           
         ]
+
+        
+
         self.player = Player(
             position = [1,1,1]
             
         )
     
-    def update(self, rate):
+    def roomCollider(self, graviy, wall, wall_m ,wallz, wallz_m, wally):
         global beforePosx
         global beforePosz
         global beforePosy
-        self.gravity = 0.01
-        self.jumpForce = 300
-        self.floor = -7
-        self.wall = 3
-        self.wallz = 3
-        self.wally = -7.01
-        if self.player.position[2] < self.floor:
+        #self.wall = 3
+        #self.wallz = 3
+        #self.wally = -7.01
+        
+        if self.player.position[2] < wally:
             #self.gravity = -0.01
             self.is_grounded = True
 
@@ -226,22 +234,30 @@ class Scene:
          #   cube.eulers[1] += 0.25 * rate
           #  if cube.eulers[1] > 360:
            #     cube.eulers[1] -= 360
-        if self.player.position[1] > self.wall or self.player.position[1] < -self.wall:
+        if self.player.position[1] > wall or self.player.position[1] < wall_m:
             self.player.position[1] = beforePosx
-            print("colide")
+            #print("colide")
 
         else:
             beforePosx = self.player.position[1]
-            print("notColide")
+            #print("notColide")
 
-        if self.player.position[0] > self.wallz or self.player.position[0] < -self.wallz:
+        if self.player.position[0] > wallz or self.player.position[0] < wallz_m:
             self.player.position[0] = beforePosz
-            print("colide")
+            #print("colide")
             
         else:
             beforePosz = self.player.position[0]
-            print("notColide")
+            #print("notColide")
 
+    def update(self, rate):
+        self.gravity = 0.01
+        self.jumpForce = 300
+        #self.floor = -7
+        
+        Scene.roomCollider(self,self.gravity, 3.4, -3.4 , 3.4, -3.4 , -7.01)
+        
+        
 
 
         keys = pg.key.get_pressed()
@@ -287,18 +303,20 @@ class App:
         self.lightCount = 0
 
         self.mainLoop()
-   
+    
     def mainLoop(self):
+        
         running = True
         while (running):
-            
+           
             #check events
             for event in pg.event.get():
-                if (event.type == pg.QUIT):
+                if event.type == pg.QUIT:
                     running = False
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_ESCAPE:
                         running = False
+                
                
             
             self.handleKeys()
@@ -361,18 +379,22 @@ class App:
                 directionModifier = 315
             
             dPos = [
-                self.frameTime * 0.003 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
-                self.frameTime * 0.003 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
+                0.013 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
+                0.013 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
+                
                 0
             ]
 
             self.scene.move_player(dPos)
     
     def handleMouse(self):
-
+        
         (x,y) = pg.mouse.get_pos()
-        theta_increment = self.frameTime * 0.05 * ((self.screenWidth // 2) - x)
-        phi_increment = self.frameTime * 0.05 * ((self.screenHeight // 2) - y)
+        
+       
+        
+        theta_increment = 0.25 * ((self.screenWidth // 2) - x)
+        phi_increment = 0.25 * ((self.screenHeight // 2) - y)
         self.scene.spin_player(theta_increment, phi_increment)
         pg.mouse.set_pos((self.screenWidth // 2,self.screenHeight // 2))
     
@@ -404,7 +426,8 @@ class GraphicsEngine:
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK,
                                     pg.GL_CONTEXT_PROFILE_CORE)
-        pg.display.set_mode((640,480), pg.OPENGL|pg.DOUBLEBUF)
+        #window
+        pg.display.set_mode((1200,800), pg.OPENGL|pg.DOUBLEBUF)
 
         #initialise opengl
         glClearColor(0.0, 0.0, 0.0, 1)
@@ -419,18 +442,33 @@ class GraphicsEngine:
         shader = self.createShader("D:/git/revolver-lite/pythonEngine/shaders/vertex.txt", "D:/git/revolver-lite/pythonEngine/shaders/fragment.txt")
         self.texturedLitPass = RenderPassTexturedLit3D(shader)
 
+        #MESH
+        self.wall = Mesh("D:/git/revolver-lite/pythonEngine/models/wallfull.obj", 1, 4)
+        self.floor = Mesh("D:/git/revolver-lite/pythonEngine/models/floor2.obj", 1, 200)
+        
         
 
-        self.wood_texture = Material("D:/git/revolver-lite/pythonEngine/gfx/woodrte.jpg")
-        self.cube_mesh = Mesh("D:/git/revolver-lite/pythonEngine/models/room3.obj", 1)
-        self.ca = Mesh("D:/git/revolver-lite/pythonEngine/models/monkey.obj", 3)
+        #TEXTURES
+        self.walltexture = Material("D:/git/revolver-lite/pythonEngine/gfx/Leather035C_2K_Color.jpg")
+        self.floortexture = Material("D:/git/revolver-lite/pythonEngine/gfx/wood2.jpg")
         self.medkit_texture = Material("D:/git/revolver-lite/pythonEngine/gfx/woodrte.jpg")
-        self.medkit_billboard = BillBoard(w = 0.6, h = 0.5)
 
+        #BILLBOARDS
+        self.medkit_billboard = BillBoard(w = 0.6, h = 0.5)
+       
+        
         shader = self.createShader("D:/git/revolver-lite/pythonEngine/shaders/vertex_light.txt", "D:/git/revolver-lite/pythonEngine/shaders/fragment_light.txt")
         self.texturedPass = RenderPassTextured3D(shader)
         self.light_texture = Material("D:/git/revolver-lite/pythonEngine/gfx/lightPlaceHolder.png")
         self.light_billboard = BillBoard(w = 0.2, h = 0.1)
+
+
+        global NonScriptableObjects
+        NonScriptableObjects = [SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [4,0,-6.5], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-4,0,-6.5], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.floor, tex = self.floortexture ,position = [0,0,-9], eulers = [90,0,0])]
+        
+
         
     @lru_cache(maxsize=None)
     def createShader(self, vertexFilepath, fragmentFilepath):
@@ -460,10 +498,8 @@ class GraphicsEngine:
    
     def destroy(self):
 
-        self.cube_mesh.destroy()
-        
-        self.ca.destroy()
-        self.wood_texture.destroy()
+        self.floor.destroy()
+        self.walltexture.destroy()
         self.medkit_billboard.destroy()
         self.medkit_texture.destroy()
         self.light_billboard.destroy()
@@ -495,15 +531,15 @@ class RenderPassTexturedLit3D:
         self.lightLocation = {
             "position": [
                 glGetUniformLocation(self.shader, f"Lights[{i}].position")
-                for i in range(1)
+                for i in range(8)
             ],
             "color": [
                 glGetUniformLocation(self.shader, f"Lights[{i}].color")
-                for i in range(1)
+                for i in range(8)
             ],
             "strength": [
                 glGetUniformLocation(self.shader, f"Lights[{i}].strength")
-                for i in range(1)
+                for i in range(8)
             ]
         }
         self.cameraPosLoc = glGetUniformLocation(self.shader, "cameraPostion")
@@ -527,12 +563,14 @@ class RenderPassTexturedLit3D:
             glUniform3fv(self.lightLocation["color"][i], 1, light.color)
             glUniform1f(self.lightLocation["strength"][i], light.strength)
        
-        NonScriptableObjects = [SimpleComponent(mesh = engine.ca,position = [6,0,1], eulers = [0,0,0]), ]
+        #NonScriptableObjects = [SimpleComponent(mesh = engine.ca,position = [6,0,1], eulers = [0,0,0]),]
+        #def createNonObjects():
+        
+            
         def createNonObjects():
-
+            
             for nonscriptname in NonScriptableObjects:
                 
-                print(nonscriptname)
                 model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
                 model_transform = pyrr.matrix44.multiply(
                     m1=model_transform, 
@@ -547,11 +585,13 @@ class RenderPassTexturedLit3D:
                     )
                 )
                 glUniformMatrix4fv(self.modelMatrixLocation,1,GL_FALSE,model_transform)
-                engine.wood_texture.use()
+                nonscriptname.tex.use()
                 glBindVertexArray(nonscriptname.mesh.vao)
                 glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
-        
+                
         createNonObjects()
+        
+        
         
         
 
@@ -587,7 +627,8 @@ class RenderPassTexturedLit3D:
             glDrawArrays(GL_TRIANGLES, 0, engine.medkit_billboard.vertexCount)
    
     def destroy(self):
-
+        
+        
         glDeleteProgram(self.shader)
 
 class RenderPassTextured3D:
@@ -601,7 +642,7 @@ class RenderPassTextured3D:
 
         projection_transform = pyrr.matrix44.create_perspective_projection(
             fovy = 45, aspect = 640/480, 
-            near = 0.1, far = 50, dtype=np.float32
+            near = 0.1, far = 100, dtype=np.float32
         )
         glUniformMatrix4fv(
             glGetUniformLocation(self.shader,"projection"),
@@ -651,11 +692,14 @@ class RenderPassTextured3D:
             glBindVertexArray(engine.light_billboard.vao)
             
             glDrawArrays(GL_TRIANGLES, 0, engine.light_billboard.vertexCount)
+
+
+       
+
     @lru_cache(maxsize=None)
     def destroy(self):
 
         glDeleteProgram(self.shader)
-
 class Material:
 
     
@@ -678,6 +722,7 @@ class Material:
     
     def destroy(self):
         glDeleteTextures(1, (self.texture,))
+
 
 class BillBoard:
     @lru_cache(maxsize=None)
@@ -714,4 +759,4 @@ class BillBoard:
         glDeleteVertexArrays(1, (self.vao,))
         glDeleteBuffers(1, (self.vbo,))
 
-myApp = App(800,600)
+myApp = App(1200,800)
