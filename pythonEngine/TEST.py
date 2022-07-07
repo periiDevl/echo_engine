@@ -180,8 +180,12 @@ beforePosz = 0
 
 global beforePosy
 beforePosy = 0
-class Scene:
 
+class Scene:
+    global beforekeys
+    beforekeys = []
+    velocityY = 0
+    keys = []
     
     def __init__(self):
         self.medkits = [
@@ -225,10 +229,13 @@ class Scene:
         if self.player.position[2] < wally:
             #self.gravity = -0.01
             self.is_grounded = True
-
+            if (self.velocityY < 0):
+                self.player.position[2] -= self.velocityY
         else:
-            self.player.position[2] = self.player.position[2] - self.gravity
+            self.velocityY += (1 /  60) * (1 / 60) * self.gravity
             self.is_grounded = False
+            self.player.position[2] -= self.velocityY
+
         #for cube in self.cubes:
         
          #   cube.eulers[1] += 0.25 * rate
@@ -249,10 +256,11 @@ class Scene:
         else:
             beforePosz = self.player.position[0]
             #print("notColide")
-
+    
     def update(self, rate):
-        self.gravity = 0.01
-        self.jumpForce = 300
+        global beforekeys
+        self.gravity = 0.51
+        self.jumpForce = .02
         #self.floor = -7
         
         Scene.roomCollider(self,self.gravity, 3.4, -3.4 , 3.4, -3.4 , -7.01)
@@ -261,9 +269,11 @@ class Scene:
 
 
         keys = pg.key.get_pressed()
-        if keys[pg.K_SPACE] and self.is_grounded:
-            self.player.position[2] = self.player.position[2] + self.gravity * self.jumpForce
-            
+        if beforekeys != None:
+            if keys[pg.K_SPACE] and not beforekeys[pg.K_SPACE] and self.is_grounded:
+                self.velocityY = -self.jumpForce
+
+        beforekeys = pg.key.get_pressed()
        
         
     def move_player(self, dPos):
@@ -307,6 +317,7 @@ class App:
     def mainLoop(self):
         
         running = True
+        self.scene.beforekeys = pg.key.get_pressed()
         while (running):
            
             #check events
@@ -386,6 +397,7 @@ class App:
             ]
 
             self.scene.move_player(dPos)
+        
     
     def handleMouse(self):
         
@@ -403,11 +415,11 @@ class App:
         self.currentTime = pg.time.get_ticks()
         delta = self.currentTime - self.lastTime
         if (delta >= 1000):
-            framerate = max(1,int(1000.0 * self.numFrames/delta))
+            framerate = max(1,int(120.0 * self.numFrames/delta))
             pg.display.set_caption(f"Running at {framerate} fps.")
             self.lastTime = self.currentTime
             self.numFrames = -1
-            self.frameTime = float(1000.0 / max(1,framerate))
+            self.frameTime = float(120.0 / max(1,framerate))
         self.numFrames += 1
 
     def quit(self):
@@ -439,27 +451,27 @@ class GraphicsEngine:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         #create renderpasses and resources
-        shader = self.createShader("D:/git/revolver-lite/pythonEngine/shaders/vertex.txt", "D:/git/revolver-lite/pythonEngine/shaders/fragment.txt")
+        shader = self.createShader("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/shaders/vertex.txt", "E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/shaders/fragment.txt")
         self.texturedLitPass = RenderPassTexturedLit3D(shader)
 
         #MESH
-        self.wall = Mesh("D:/git/revolver-lite/pythonEngine/models/wallfull.obj", 1, 4)
-        self.floor = Mesh("D:/git/revolver-lite/pythonEngine/models/floor2.obj", 1, 200)
+        self.wall = Mesh("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/models/wallfull.obj", 1, 4)
+        self.floor = Mesh("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/models/floor2.obj", 1, 200)
         
         
 
         #TEXTURES
-        self.walltexture = Material("D:/git/revolver-lite/pythonEngine/gfx/Leather035C_2K_Color.jpg")
-        self.floortexture = Material("D:/git/revolver-lite/pythonEngine/gfx/wood2.jpg")
-        self.medkit_texture = Material("D:/git/revolver-lite/pythonEngine/gfx/woodrte.jpg")
+        self.walltexture = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/Leather035C_2K_Color.jpg")
+        self.floortexture = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/wood2.jpg")
+        self.medkit_texture = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/woodrte.jpg")
 
         #BILLBOARDS
         self.medkit_billboard = BillBoard(w = 0.6, h = 0.5)
        
         
-        shader = self.createShader("D:/git/revolver-lite/pythonEngine/shaders/vertex_light.txt", "D:/git/revolver-lite/pythonEngine/shaders/fragment_light.txt")
+        shader = self.createShader("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/shaders/vertex_light.txt", "E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/shaders/fragment_light.txt")
         self.texturedPass = RenderPassTextured3D(shader)
-        self.light_texture = Material("D:/git/revolver-lite/pythonEngine/gfx/lightPlaceHolder.png")
+        self.light_texture = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/lightPlaceHolder.png")
         self.light_billboard = BillBoard(w = 0.2, h = 0.1)
 
 

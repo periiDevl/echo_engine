@@ -487,6 +487,79 @@ m.add_command(label ="Reload",command=HeirarchyRefresh)
 ### stop Heirarchy Window
 
 ### Scene Management
+<<<<<<< Updated upstream
+=======
+run = True
+
+##### Save popup
+
+global PopupSave
+
+def QuitWithoutSave():
+        global run
+        run = False
+def SavePopup():
+        global HeirarchyWin, run
+
+        if "*" not in HeirarchyWin.title():
+                run = False
+                return
+        from tkinter.messagebox import showinfo
+        PopupSave = tkinter.Tk()
+        PopupSave.geometry(f"350x150+"+str(int(Width/2 - 175))+"+"+str(int(Height/2 - 75)))
+        PopupSave.wm_title("Save Check")
+
+        l = tkinter.Label(PopupSave, text="Are you sure you wanna quit?\n You have unsaved changes", font=("Ariel", 18))
+        l.pack(side=tkinter.TOP)
+
+        b = tkinter.Button(PopupSave,bg="#bd0909",highlightbackground="Red", text="Yes", command=QuitWithoutSave,font=("Ariel", 15), height=3, width=12)
+        b.pack(side=tkinter.LEFT)
+        b = tkinter.Button(PopupSave,bg="#13a842",highlightbackground="Green", text="No", command=PopupSave.destroy,font=("Ariel", 15), height=3, width=12)
+        b.pack(side=tkinter.RIGHT)
+
+
+##### End Save popup
+
+def GetVectorNorDir(Pos1, Pos2):
+        return [(Pos1[0] - Pos2[0]),(Pos1[1] - Pos2[1])]
+
+##### Collision outline
+
+def CheckOutline(outline):
+        _outline = outline
+        myoutline = []
+        myoutline.append(_outline[0])
+        for index in range(0, len(_outline)):
+                #If index should be checked
+                if index > 0 and index < len(_outline)-1:
+                        if GetVectorNorDir(_outline[index-1], _outline[index]) != GetVectorNorDir(_outline[index], _outline[index+1]):
+                                myoutline.append(_outline[index])
+        myoutline.append(_outline[len(_outline)-1])
+        print("Outline: " + str(myoutline))
+        return outline
+
+def ShowOutline(Force):
+        for obj in SceneObjects:
+                if obj.path != "" and obj.path != "Nothing" and (len(obj.polcolliderpoints) == 0 or Force):
+                        ObjSprite = pygame.image.load(obj.path)
+                        Size = int(ObjSprite.get_size()[0] + ObjSprite.get_size()[1])
+                        ObjSprite = pygame.transform.scale(ObjSprite, ((int((Size/ObjSprite.get_size()[1]) * obj.scale.x)),int((Size/ObjSprite.get_size()[0]) * obj.scale.y)))
+                        ObjSprite = pygame.transform.rotate(ObjSprite, obj.rotation)
+                        ObjRect = ObjSprite.get_rect(center = ObjSprite.get_rect(center = (obj.position.x,obj.position.y)).center)
+                        objMask = pygame.mask.from_surface(ObjSprite)
+                        obj.collisiondepth = 3
+                        outline = [(p[0] + ObjRect[0], p[1] + ObjRect[1]) for p in objMask.outline(obj.collsiondepth)]
+                        outline = CheckOutline(outline)
+                        obj.polcolliderpoints = outline
+                if len(obj.polcolliderpoints) >= 2:
+                        pygame.draw.lines(Scene, (126, 255,126), False, obj.polcolliderpoints, 1)
+
+
+##### End Collision outline
+
+global DragOffset
+
+>>>>>>> Stashed changes
 def DrawEveryChar():
         for SceneO in SceneObjects:
                 if (SceneO.path != ""):
@@ -540,7 +613,13 @@ def HandleSceneObjects(event, mx, my):
                                         return
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 for SceneO in SceneObjects:
+<<<<<<< Updated upstream
                         SceneO.drag = False
+=======
+                        if SceneO.drag:
+                                #ShowOutline(True)
+                                SceneO.drag = False
+>>>>>>> Stashed changes
 mouseX, mouseY = 0, 0
 
 FPS = 150
@@ -570,7 +649,12 @@ def main():
                 DrawEveryChar()
                 pygame.display.flip()
                 HeirarchyWin.update()
+        global PopupSave
         pygame.quit()
+        InspectorWin.destroy()
+        HeirarchyWin.destroy()
+        PopupSave.destroy()
+        
 
 if __name__ == "__main__":
      main()
