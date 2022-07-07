@@ -11,7 +11,7 @@ in vec3 fragmentPosition;
 in vec3 fragmentNormal;
 
 uniform sampler2D imageTexture;
-uniform PointLight Lights[10];
+uniform PointLight Lights[8];
 uniform vec3 cameraPosition;
 
 out vec4 color;
@@ -21,13 +21,14 @@ vec3 calculatePointLight(PointLight light, vec3 fragPosition, vec3 fragNormal);
 void main()
 {
     //ambient
-    vec3 temp = 0.2 * texture(imageTexture, fragmentTexCoord).rgb;
+    vec4 baseTexture = texture(imageTexture, fragmentTexCoord);
+    vec3 temp = 0.2 * baseTexture.rgb;
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 8; i++) {
         temp += calculatePointLight(Lights[i], fragmentPosition, fragmentNormal);
     }
-
-    color = vec4(temp, 1);
+    
+    color = vec4(temp, baseTexture.a);
 }
 
 vec3 calculatePointLight(PointLight light, vec3 fragPosition, vec3 fragNormal) {
