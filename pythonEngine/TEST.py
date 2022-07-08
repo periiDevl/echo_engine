@@ -288,7 +288,7 @@ class Scene:
         self.jumpForce = .01
         #self.floor = -7
         
-        Scene.roomCollider(self,self.gravity, 3.35, -3.55 , 3.35, -3.35 , -6.5, False, False, True, True)
+        Scene.roomCollider(self,self.gravity, 8.35, -2.8 , 3.35, -3.35 , -6.5, True, True, True, True)
         
         
 
