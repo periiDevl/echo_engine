@@ -1,5 +1,5 @@
 import tkinter
-from tkinter import filedialog, colorchooser
+from tkinter import IntVar, filedialog, colorchooser, ttk
 import keyboard
 import ObjectPython
 import SceneHandler
@@ -70,11 +70,11 @@ def GetObjectByID(objId):
         for i in SceneObjects:
                 if (int(i.thisId) == int(objId)):
                         return i
-        return False
+        return 0
 
 def SetLayers():
         for o in SceneObjects:
-                o.layer = len(SceneObjects) - SceneObjects.index(o) + 1
+                o.rendererlayer = len(SceneObjects) - SceneObjects.index(o) + 1
         HeirarchyRefresh()
 
         
@@ -85,7 +85,7 @@ def allowedName(WantedName):
         for o in SceneObjects:
                 if (o.name == WantedName and o.thisId != InspecID):
                         WantedNameEnd = WantedName[-3::1]
-                        if "(" in WantedNameEnd and ")" in WantedNameEnd and WantedNameEnd[-2].isdigit():
+                        if "(" == WantedNameEnd[0] and ")" == WantedNameEnd[-1] and WantedNameEnd[1].isdigit():
                                 WantedName = WantedName[:-3:1] + "("  + str(int(WantedNameEnd[-2]) + 1) + ")"
                                 return allowedName(WantedName)
                         else :
@@ -94,9 +94,11 @@ def allowedName(WantedName):
 
 
 def CreateObject():
+        global SomethingChanged
         WantedObj = ObjectPython.Object()
         WantedObj.name = allowedName(WantedObj.name)
         SceneObjects.append(WantedObj)
+        SomethingChanged = True
         HeirarchyWin.title("Heirarchy*")
         SetLayers()
         HeirarchyRefresh()
@@ -140,11 +142,15 @@ def PressingSave(e):
                 saveloadmanager.save_game_data([SceneObjects], ["Objects"])
 ### End Basic Functions
 ### Pygame scene window
+from pygame.locals import *
+
+flags = 24
+
 pygame.font.init()
 os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (350,230)
 
 SceneWidth, SceneHeight = Width, Height
-Scene = pygame.display.set_mode((SceneWidth-350-350,SceneHeight-200))
+Scene = pygame.display.set_mode((SceneWidth-350-350,SceneHeight-200), flags, 16)
 pygame.display.set_caption("Scene")
 
 ### End Pygame scene window
@@ -174,21 +180,25 @@ Active = tkinter.IntVar()
 
 def ChangeObjName(Event):
         global InspecID
-        global objHex
+        global objHex, SomethingChanged
         obj = GetObjectByID(InspecID)
         index_ = SceneObjects.index(obj)
         obj.SetName(ObjName.get())
         SceneObjects[index_] = obj
         global HeirarchyWin
+        SomethingChanged = True
         HeirarchyWin.title("Heirarchy*")
         HeirarchyRefresh()
+        
         return True
 def SetActive():
-        global InspecID
+        global InspecID, SomethingChanged
         obj = GetObjectByID(InspecID)
         obj.SetActive(Active.get())
+        SomethingChanged = True
         HeirarchyWin.title("Heirarchy*")
         SetLayers()
+
 NameText = tkinter.Label(InspectorWin,text = "Object name", font = ("Ariel", 20),width = 85)
 NameText.pack(side=tkinter.TOP)
 InspecName = tkinter.Entry(InspectorWin, text="", font = ('Ariel', 17), width = 25)
@@ -215,35 +225,45 @@ ScaleY = tkinter.IntVar()
 
 
 def SetPosX(event):
-        global InspecID
+        global InspecID, SomethingChanged
         obj = GetObjectByID(InspecID)
         obj.SetPos(pygame.Vector2(PosX.get(),obj.position.y))
         HeirarchyWin.title("Heirarchy*")
+        SomethingChanged = True
+        ShowOutline(True)
 def SetPosY(event):
-        global InspecID
+        global InspecID, SomethingChanged
         obj = GetObjectByID(InspecID)
         obj.SetPos(pygame.Vector2(obj.position.x,PosY.get()))
         HeirarchyWin.title("Heirarchy*")
+        SomethingChanged = True
+        ShowOutline(True)
 
 def SetRot(event):
-        global InspecID
+        global InspecID, SomethingChanged
         obj = GetObjectByID(InspecID)
         obj.SetRot(RotZ.get())
         HeirarchyWin.title("Heirarchy*")
+        SomethingChanged = True
+        ShowOutline(True)
 
 def SetScaleX(event):
         global InspecID
-        global ScaleX
+        global ScaleX, SomethingChanged
         obj = GetObjectByID(InspecID)
         obj.SetScale(pygame.Vector2(ScaleX.get(),obj.scale.y))
         HeirarchyWin.title("Heirarchy*")
+        SomethingChanged = True
+        ShowOutline(True)
 
 def SetScaleY(event):
         global InspecID
-        global ScaleY
+        global ScaleY, SomethingChanged
         obj = GetObjectByID(InspecID)
         obj.SetScale(pygame.Vector2(obj.scale.x,ScaleY.get()))
         HeirarchyWin.title("Heirarchy*")
+        SomethingChanged = True
+        ShowOutline(True)
 
 PositionsText = tkinter.Label(InspectorWin,text = "Positions", font = ("Ariel", 20),width = 85)
 PositionsText.pack(side=tkinter.TOP)
@@ -289,7 +309,7 @@ InputScaleY.bind('<KeyRelease>', SetScaleY)
 ##### Sprite Renderer
 
 def ImageFileButton():
-        global InspecID
+        global InspecID, SomethingChanged
         global InspecImage
         InspecImage = filedialog.askopenfilename(title = "Select sprite",filetypes = (("Image files:", ".png .jpg"),))
         obj = GetObjectByID(InspecID)
@@ -297,14 +317,18 @@ def ImageFileButton():
         if (InspecImage != "" and InspecImage != "Nothing"):
                 InspecImgButton.configure(text = GetEndOfAFile(InspecImage))
         HeirarchyWin.title("Heirarchy*")
+        SomethingChanged = True
+        ShowOutline(True)
 
 def SetColorSprite():
-        global objHex
+        global objHex, SomethingChanged
         (rbg, objHex)= colorchooser.askcolor()
         InspecColor.configure(bg =objHex)
         obj = GetObjectByID(InspecID)
         obj.color = objHex
         HeirarchyWin.title("Heirarchy*")
+        SomethingChanged = True
+        ShowOutline(True)
 
 InspecSpriteText = tkinter.Label(InspectorWin, text = "SPRITE RENDERER", font = ('Ariel', 25), width = 25)
 InspecSpriteText.pack(side=tkinter.TOP)
@@ -312,13 +336,112 @@ InspecSpriteText.pack(side=tkinter.TOP)
 InspecImgButton = tkinter.Button(InspectorWin, text = "Select image", font = ('Ariel', 15), width = 25, command = ImageFileButton)
 InspecImgButton.pack(side=tkinter.TOP)
 
-InspecBetweenLabel = tkinter.Label(InspectorWin, width = 25, height = 2)
-InspecBetweenLabel.pack(side=tkinter.TOP)
+InspecSrBetweenLabel = tkinter.Label(InspectorWin, width = 25, height = 2)
+InspecSrBetweenLabel.pack(side=tkinter.TOP)
 
 InspecColor = tkinter.Button(InspectorWin, text = "Select Color", font = ('Ariel', 15), width = 25, command = SetColorSprite)
 InspecColor.pack(side=tkinter.TOP)
 
+InspecSrBottomLabel = tkinter.Label(InspectorWin, width = 25, height = 2)
+InspecSrBottomLabel.pack(side=tkinter.TOP)
+
 ##### End Sprite Renderer
+
+##### Collider
+
+global PolColDepth, ColliderType
+collidertypes = ['Circle', 'Rectangle', 'Polygon']
+
+CirColRadius = tkinter.IntVar()
+PolColDepth = tkinter.IntVar()
+ColOffsetX = tkinter.IntVar()
+ColOffsetY = tkinter.IntVar()
+
+ColliderType = tkinter.StringVar()
+ColliderType.set('Circle')
+
+def SetCirColOffset(event):
+        global InspecID, SomethingChanged
+        obj = GetObjectByID(InspecID)
+        obj.SetCirColOffset((ColOffsetX.get(), ColOffsetY.get()))
+        SomethingChanged = True
+        HeirarchyWin.title("Heirarchy*")
+
+def SetPolColOffset(event):
+        global InspecID, SomethingChanged
+        obj = GetObjectByID(InspecID)
+        obj.SetPolColOffset((ColOffsetX.get(), ColOffsetY.get()))
+        SomethingChanged = True 
+        HeirarchyWin.title("Heirarchy*")
+
+def SetRectColOffset(event):
+        global InspecID, SomethingChanged
+        obj = GetObjectByID(InspecID)
+        obj.SetRectColOffset((ColOffsetX.get(), ColOffsetY.get()))
+        SomethingChanged = True
+        HeirarchyWin.title("Heirarchy*")
+
+def SetCirColRadius(event):
+        global InspecID, SomethingChanged
+        obj = GetObjectByID(InspecID)
+        obj.SetColRadius(CirColRadius.get())
+        SomethingChanged = True
+        HeirarchyWin.title("Heirarchy*")
+def SetPolColDepth(event):
+        global InspecID, SomethingChanged
+        obj = GetObjectByID(InspecID)
+        obj.SetColDepth(PolColDepth.get())
+        SomethingChanged = True
+        HeirarchyWin.title("Heirarchy*")
+
+InspecColliderText = tkinter.Label(InspectorWin, text = "COLLIDER", font = ('Ariel', 25), width = 25)
+InspecColliderText.pack(side=tkinter.TOP)
+
+InspecColliderOption = ttk.Combobox(InspectorWin, width=15, textvariable=ColliderType, values=collidertypes, font = ('Ariel', 15))
+InspecColliderOption.pack(side=tkinter.TOP)
+
+InspecPolColliderLabel = tkinter.Label(InspectorWin, text = "Prefection\n(1 - 100)", font = ('Ariel', 17), width = 45)
+InspecPolColliderLabel.pack(side=tkinter.TOP)
+
+InputPolColliderDepth = tkinter.Entry(InspectorWin, validate = 'key', textvariable = PolColDepth,font = ("Ariel", 15))
+InputPolColliderDepth.pack(side=tkinter.TOP)
+InputPolColliderDepth.bind('<KeyRelease>', SetPolColDepth)
+
+def DestroyPolygon():
+        global InspecPolColliderLabel, InputPolColliderDepth
+        if InspecPolColliderLabel != None:
+                InspecPolColliderLabel.destroy()
+        if InputPolColliderDepth != None:
+                InputPolColliderDepth.destroy()
+
+def ResetInspecCollider():
+        global InspecPolColliderLabel, InputPolColliderDepth
+        if ColliderType.get() == "Circle":
+                DestroyPolygon()
+                InspecPolColliderLabel = tkinter.Label(InspectorWin, text = "Radius", font = ('Ariel', 17), width = 45, bg="#5b64e9")
+                InspecPolColliderLabel.pack(side=tkinter.TOP)
+
+                InputPolColliderDepth = tkinter.Entry(InspectorWin, validate = 'key', textvariable = CirColRadius,font = ("Ariel", 15))
+                InputPolColliderDepth.pack(side=tkinter.TOP)
+                InputPolColliderDepth.bind('<KeyRelease>', SetCirColRadius)
+        if ColliderType.get() == "Rectangle":
+                DestroyPolygon()
+        if ColliderType.get() == "Polygon":
+                DestroyPolygon()
+                InspecPolColliderLabel = tkinter.Label(InspectorWin, text = "Prefection\n(1 - 100)", font = ('Ariel', 17), width = 45, bg="#5b64e9")
+                InspecPolColliderLabel.pack(side=tkinter.TOP)
+
+                InputPolColliderDepth = tkinter.Entry(InspectorWin, validate = 'key', textvariable = PolColDepth,font = ("Ariel", 15))
+                InputPolColliderDepth.pack(side=tkinter.TOP)
+                InputPolColliderDepth.bind('<KeyRelease>', SetPolColDepth)
+
+
+
+def ChangeCollider(event):
+        ResetInspecCollider()
+
+InspecColliderOption.bind("<<ComboboxSelected>>", ChangeCollider)
+##### End Collider
 
 InspectorWin.configure(bg = "#5b64e9")
 ScalesLabel.configure(bg = "#5b64e9")
@@ -330,7 +453,10 @@ InspecBasicsText.configure(bg = "#525cf1")
 NameText.configure(bg = "#5b64e9")
 TransformText.configure(bg = "#525cf1")
 InspecSpriteText.configure(bg = "#525cf1")
-InspecBetweenLabel.configure(bg = "#5b64e9")
+InspecSrBetweenLabel.configure(bg = "#5b64e9")
+InspecSrBottomLabel.configure(bg = "#5b64e9")
+InspecColliderText.configure(bg="#525cf1")
+InspecPolColliderLabel.configure(bg = "#5b64e9")
 
 def OpenInspector(Obj):
 	import tkinter
@@ -343,20 +469,26 @@ def OpenInspector(Obj):
 	global PosX, PosY, RotZ, ScaleX, ScaleY
 
 	global InspecColor,InspecImgButton
+
+	global PolColDepth
         
 	InsObj = GetObjectByName(Obj)
 	InspecID = InsObj.thisId
 	InspecName.delete(0,tkinter.END)
 	InspecName.insert(0,Obj)
 	Active.set(InsObj.active)
+	
 	PosX.set(int(InsObj.position.x))
 	PosY.set(int(InsObj.position.y))
 	RotZ.set(int(InsObj.rotation))
 	ScaleX.set(int(InsObj.scale.x))
 	ScaleY.set(int(InsObj.scale.y))
+
 	InspecColor.configure(bg = InsObj.color)
 	if (InsObj.path != ""):InspecImgButton.configure(text = GetEndOfAFile(InsObj.path))
 	else:InspecImgButton.configure(text = "Select Image")
+
+	PolColDepth.set(int(InsObj.collsiondepth))
 	
 	return
 
@@ -445,6 +577,13 @@ def HeirarchyOpen():
 	
 HeirarchyOpen()
 ##### Basic Menu
+def DestroyObject():
+        global InspecID, SceneObjects, SomethingChanged
+        Obj = GetObjectByID(InspecID)
+        SceneObjects.remove(Obj)
+        HeirarchyRefresh()
+        SomethingChanged = True
+        HeirarchyWin.title("Heirarchy*")
 
 def CopyObject():
         global InspecID
@@ -453,7 +592,7 @@ def CopyObject():
 def PasteObject():
         global InspecID, SceneObjects
         if "Object10" not in pyperclip.paste():
-                return;
+                return
         DesiObjId = pyperclip.paste().replace('Object10', "") 
         DesiObj = GetObjectByID(DesiObjId)
         objIndex = SceneObjects.index(DesiObj)
@@ -478,6 +617,7 @@ m.add_command(label ="Create an object", command=CreateObject)
 m.add_command(label ="Copy", command=CopyObject)
 m.add_command(label ="Paste", command=PasteObject)
 m.add_command(label ="Reload",command=HeirarchyRefresh)
+m.add_command(label ="Create an object", command=DestroyObject)
 #m.add_separator()
 #m.add_command(label ="Rename")
 
@@ -487,20 +627,17 @@ m.add_command(label ="Reload",command=HeirarchyRefresh)
 ### stop Heirarchy Window
 
 ### Scene Management
-<<<<<<< Updated upstream
-=======
 run = True
 
 ##### Save popup
 
 global PopupSave
-
 def QuitWithoutSave():
         global run
         run = False
 def SavePopup():
         global HeirarchyWin, run
-
+        print(HeirarchyWin.title())
         if "*" not in HeirarchyWin.title():
                 run = False
                 return
@@ -559,18 +696,19 @@ def ShowOutline(Force):
 
 global DragOffset
 
->>>>>>> Stashed changes
 def DrawEveryChar():
         for SceneO in SceneObjects:
                 if (SceneO.path != ""):
-                        ObjSprite = pygame.image.load(SceneO.path)
+                        ObjSprite = pygame.image.load(SceneO.path).convert_alpha()
                         Size = int(ObjSprite.get_size()[0] + ObjSprite.get_size()[1])
                         ObjSprite = pygame.transform.scale(ObjSprite, ((int((Size/ObjSprite.get_size()[1]) * SceneO.scale.x)),int((Size/ObjSprite.get_size()[0]) * SceneO.scale.y)))
                         ObjSprite = pygame.transform.rotate(ObjSprite, SceneO.rotation)
                         ObjRect = ObjSprite.get_rect(center = ObjSprite.get_rect(center = (SceneO.position.x,SceneO.position.y)).center)
                         Scene.blit(ObjSprite, ObjRect)
 
+
 def HandleSceneObjects(event, mx, my):
+        global DragOffset, SomethingChanged
         if event.type == pygame.MOUSEBUTTONDOWN:
                 if  event.button == 1:
                         for SceneO in SceneObjects:
@@ -582,6 +720,9 @@ def HandleSceneObjects(event, mx, my):
                                 
                                 if Collider.collidepoint((mx, my)):                        
                                         SceneO.drag = True
+                                        DragOffset = SceneO.position - (mx, my)
+                                        HeirarchyWin.title("Heirarchy*")
+                                        SomethingChanged = True
                                         return
                                 else:
                                         SceneO.drag = False
@@ -594,13 +735,14 @@ def HandleSceneObjects(event, mx, my):
                                 Collider = ObjSprite.get_rect(center = ObjSprite.get_rect(center = (SceneO.position.x,SceneO.position.y)).center)
                                 
                                 if Collider.collidepoint((mx, my)):
+                                        SomethingChanged = True
                                         SceneO.rotation += (5)
                                         SceneO.rotation = int(SceneO.rotation%360)
                                         RotZ.set(int(SceneO.rotation))
                                         return
                 if event.button == 5:
                         for SceneO in SceneObjects:
-                                ObjSprite = pygame.image.load(SceneO.path)
+                                ObjSprite = pygame.image.load(SceneO.path).convert_alpha()
                                 Size = int(ObjSprite.get_size()[0] + ObjSprite.get_size()[1])
                                 ObjSprite = pygame.transform.scale(ObjSprite, ((int((Size/ObjSprite.get_size()[1]) * SceneO.scale.x)),int((Size/ObjSprite.get_size()[0]) * SceneO.scale.y)))
                                 ObjSprite = pygame.transform.rotate(ObjSprite, SceneO.rotation)
@@ -609,52 +751,65 @@ def HandleSceneObjects(event, mx, my):
                                 if Collider.collidepoint((mx, my)):
                                         SceneO.rotation += (355)
                                         SceneO.rotation = int(SceneO.rotation%360)
+                                        SomethingChanged = True
                                         RotZ.set(int(SceneO.rotation))
                                         return
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 for SceneO in SceneObjects:
-<<<<<<< Updated upstream
-                        SceneO.drag = False
-=======
                         if SceneO.drag:
-                                #ShowOutline(True)
+                                ShowOutline(True)
                                 SceneO.drag = False
->>>>>>> Stashed changes
 mouseX, mouseY = 0, 0
-
-FPS = 150
+SomethingChanged = True
+FPS = 999
 def main():
+        global run, DragOffset, SomethingChanged
         clock = pygame.time.Clock()
         global ObjectDraggedID
-        run = True
+        TimePassed = 0
         while run:
                 clock.tick(FPS)
-                pygame.display.set_caption(("Scene " + str(clock.get_fps())))
+                pygame.display.set_caption(("Scene " + str(int(clock.get_fps()))))
+                deltaTime = 0
+                if (clock.get_fps() != 0):
+                        deltaTime = 1/clock.get_fps()
+
+                TimePassed += deltaTime
+                if TimePassed > .5:
+                        TimePassed = 0
+                        SomethingChanged = True
+
+                KeysPressed = pygame.key.get_pressed()
 
                 mouseX, mouseY = pygame.mouse.get_pos()
-                bgColor = basicFunctions.HexToRGB(SceneObjects[0].color)
+                
+                if len(SceneObjects) > 0:
+                        bgColor = basicFunctions.HexToRGB(SceneObjects[0].color)
 
                 for event in pygame.event.get():
                         HandleSceneObjects(event, mouseX, mouseY)
                         if event.type == pygame.QUIT:
-                                global exitNum
-                                run = False
+                                SavePopup()
                 for obj in SceneObjects:
                         if (obj.drag):
-                                obj.SetPos(pygame.Vector2(mouseX, mouseY))
-                                PosX.set(mouseX)
-                                PosY.set(mouseY)
-                
-                Scene.fill(bgColor)
-                DrawEveryChar()
-                pygame.display.flip()
+                                dragPos = pygame.Vector2(mouseX+DragOffset[0], mouseY+DragOffset[1])
+                                obj.SetPos(dragPos)
+                                PosX.set(dragPos[0])
+                                PosY.set(dragPos[1])
+                if KeysPressed[pygame.K_SPACE]:
+                        ShowOutline(False)
+                        SomethingChanged = True
+                if pygame.mouse.get_pressed()[0]:
+                        SomethingChanged = True
+                if SomethingChanged:
+                        Scene.fill(bgColor)
+                        DrawEveryChar()
+                        if KeysPressed[pygame.K_SPACE]:
+                                ShowOutline(True)
+                        pygame.display.flip()
+                        SomethingChanged = False
                 HeirarchyWin.update()
-        global PopupSave
         pygame.quit()
-        InspectorWin.destroy()
-        HeirarchyWin.destroy()
-        PopupSave.destroy()
-        
 
 if __name__ == "__main__":
      main()
