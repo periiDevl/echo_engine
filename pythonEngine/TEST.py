@@ -184,6 +184,8 @@ beforePosz = 0
 global beforePosy
 beforePosy = 0
 
+
+
 class Scene:
     global beforekeys
     beforekeys = []
@@ -230,7 +232,6 @@ class Scene:
         #self.wall = 3
         #self.wallz = 3
         #self.wally = -7.01
-        
         if self.player.position[2] < wally:
             #self.gravity = -0.01
             self.is_grounded = True
@@ -241,54 +242,57 @@ class Scene:
             self.is_grounded = False
             self.player.position[2] -= self.velocityY
 
-        #for cube in self.cubes:
-        
-         #   cube.eulers[1] += 0.25 * rate
-          #  if cube.eulers[1] > 360:
-           #     cube.eulers[1] -= 360
-        if r == True and l == True:
-            if self.player.position[1] > wall or self.player.position[1] < wall_m:
-                self.player.position[1] = beforePosx
-            else:
-                beforePosx = self.player.position[1]
-        elif r == True and l == False:
-            if self.player.position[1] < wall_m:
-                self.player.position[1] = beforePosx
-            else:
-                beforePosx = self.player.position[1]
-        elif r == False and l == True:
-            if self.player.position[1] > wall:
-                self.player.position[1] = beforePosx
-                #print("colide")
+        if self.player.position[1] < wall and self.player.position[1] > wall_m:
+            if ro == True and lo == True:
+                if self.player.position[0] > wallz or self.player.position[0] < wallz_m:
+                    self.player.position[0] = beforePosz
+                else:
+                    beforePosz = self.player.position[0]
+            elif ro == True and lo == False:
+                if self.player.position[0] < wallz_m:
+                    self.player.position[0] = beforePosz
+                else:
+                    beforePosz = self.player.position[0]
+            if ro == False and lo == True:
+                if self.player.position[0] > wallz:
+                    self.player.position[0] = beforePosz
+                else:
+                    beforePosz = self.player.position[0]
 
-            else:
-                beforePosx = self.player.position[1]
-                #print("notColide")
+        if self.player.position[0] < wallz and self.player.position[0] > wallz_m:
+            #for cube in self.cubes:
+            
+            #   cube.eulers[1] += 0.25 * rate
+            #  if cube.eulers[1] > 360:
+            #     cube.eulers[1] -= 360
+            if r == True and l == True:
+                if self.player.position[1] > wall or self.player.position[1] < wall_m:
+                    self.player.position[1] = beforePosx
+                else:
+                    beforePosx = self.player.position[1]
+            elif r == True and l == False:
+                if self.player.position[1] < wall_m:
+                    self.player.position[1] = beforePosx
+                else:
+                    beforePosx = self.player.position[1]
+            elif r == False and l == True:
+                if self.player.position[1] > wall:
+                    self.player.position[1] = beforePosx
+                    #print("colide")
 
+                else:
+                    beforePosx = self.player.position[1]
+                    #print("notColide")
 
-        if ro == True and lo == True:
-            if self.player.position[0] > wallz or self.player.position[0] < wallz_m:
-                self.player.position[0] = beforePosz
-            else:
-                beforePosz = self.player.position[0]
-        elif ro == True and lo == False:
-            if self.player.position[0] < wallz_m:
-                self.player.position[0] = beforePosz
-            else:
-                beforePosz = self.player.position[0]
-        if ro == False and lo == True:
-            if self.player.position[0] > wallz:
-                self.player.position[0] = beforePosz
-            else:
-                beforePosz = self.player.position[0]
     
     def update(self, rate):
         global beforekeys
-        self.gravity = 0.51
-        self.jumpForce = .01
-        #self.floor = -7
+        self.gravity = 0.8
+        self.jumpForce = .015
+        #self.floor = -7                                                                                                                                                                                                                                                                                                                                                                                                                                            
         
-        Scene.roomCollider(self,self.gravity, 8.35, -2.8 , 3.35, -3.35 , -6.5, True, True, True, True)
+        Scene.roomCollider(self,self.gravity, 8.35, -2.8 , 3, -3 , -6.5, True, False, True, True)
+        
         
         
 
@@ -369,49 +373,32 @@ class App:
     def handleKeys(self):
 
         keys = pg.key.get_pressed()
-        combo = 0
+        key = 0
         directionModifier = 0
-        """
-        w: 1 -> 0 degrees
-        a: 2 -> 90 degrees
-        w & a: 3 -> 45 degrees
-        s: 4 -> 180 degrees
-        w & s: 5 -> x
-        a & s: 6 -> 135 degrees
-        w & a & s: 7 -> 90 degrees
-        d: 8 -> 270 degrees
-        w & d: 9 -> 315 degrees
-        a & d: 10 -> x
-        w & a & d: 11 -> 0 degrees
-        s & d: 12 -> 225 degrees
-        w & s & d: 13 -> 270 degrees
-        a & s & d: 14 -> 180 degrees
-        w & a & s & d: 15 -> x
-        """
-
-        if keys[pg.K_w]:
-            combo += 1
-        if keys[pg.K_a]:
-            combo += 2
-        if keys[pg.K_s]:
-            combo += 4
-        if keys[pg.K_d]:
-            combo += 8
         
-        if combo > 0:
-            if combo == 3:
+        if keys[pg.K_w]:
+            key += 1
+        if keys[pg.K_a]:
+            key += 2
+        if keys[pg.K_s]:
+            key += 4
+        if keys[pg.K_d]:
+            key += 8
+        
+        if key > 0:
+            if key == 3:
                 directionModifier = 45
-            elif combo == 2 or combo == 7:
+            elif key == 2 or key == 7:
                 directionModifier = 90
-            elif combo == 6:
+            elif key == 6:
                 directionModifier = 135
-            elif combo == 4 or combo == 14:
+            elif key == 4 or key == 14:
                 directionModifier = 180
-            elif combo == 12:
+            elif key == 12:
                 directionModifier = 225
-            elif combo == 8 or combo == 13:
+            elif key == 8 or key == 13:
                 directionModifier = 270
-            elif combo == 9:
+            elif key == 9:
                 directionModifier = 315
             
             dPos = [
@@ -505,25 +492,25 @@ class GraphicsEngine:
 
 
         global NonScriptableObjects
-        NonScriptableObjects = [SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [4,0,-5.8], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-4,0,-5.8], eulers = [90,0,0]),
+        NonScriptableObjects = [SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [3.7,0,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-3.7,0,-5.8], eulers = [90,0,0]),
         SimpleComponent(mesh = self.floor, tex = self.floortexture ,position = [0,0,-9], eulers = [90,0,0]),
         SimpleComponent(mesh = self.ceilingFloor, tex = self.ceilingg ,position = [0,0,-2.5], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-4,0,-5.8], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [4,0,-5.8], eulers = [90,0,0])
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-3.7,0,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [3.7,0,-5.8], eulers = [90,0,0])
         
         ,
-        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-4, 6.9,-5.8], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-4,6.9,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-3.7, 6.9,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-3.7,6.9,-5.8], eulers = [90,0,0]),
         
-        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [4, 6.9,-5.8], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [4,6.9,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [3.7, 6.9,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [3.7,6.9,-5.8], eulers = [90,0,0]),
         
-        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, 9,-6], eulers = [90,0,90]),
-        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,9,-6], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, 9,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,9,-5.8], eulers = [90,0,90]),
         
-        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, -3.4,-6], eulers = [90,0,90]),
-        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,-3.4,-6], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, -3.4,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,-3.4,-5.8], eulers = [90,0,90]),
         
         ]
         
