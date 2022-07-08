@@ -759,13 +759,6 @@ class RenderPassTextured3D:
 
         glUseProgram(self.shader)
         playerpos = scene.player.position
-        view_transform = pyrr.matrix44.create_look_at(
-            eye = scene.player.position,
-            target = scene.player.position + scene.player.forwards,
-            up = scene.player.up, dtype = np.float32
-        )
-        glUniformMatrix4fv(self.viewMatrixLocation, 1, GL_FALSE, view_transform)
-        
         for i,light in enumerate(scene.lights):
 
             glUniform3fv(self.tintLoc, 1, light.color)
@@ -795,6 +788,13 @@ class RenderPassTextured3D:
             glBindVertexArray(engine.light_billboard.vao)
             
             glDrawArrays(GL_TRIANGLES, 0, engine.light_billboard.vertexCount)
+        view_transform = pyrr.matrix44.create_look_at(
+            eye = scene.player.position,
+            target = scene.player.position + scene.player.forwards,
+            up = scene.player.up, dtype = np.float32
+        )
+        glUniformMatrix4fv(self.viewMatrixLocation, 1, GL_FALSE, view_transform)
+        
 
 
        
