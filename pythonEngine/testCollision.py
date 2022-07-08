@@ -186,10 +186,12 @@ beforePosy = 0
 
 
 global bacteriamanobject 
-
+global randomenemypositions
+randomenemypositions = [[1, 1, -6.5], [-10, -15, -6.5],[6, 6, -6.5]]
 class Scene:
     global beforekeys,collide
     global speed, runspeed
+    
     beforekeys = []
     velocityY = 0.01
     keys = []
@@ -225,8 +227,9 @@ class Scene:
 
         self.player = Player(
             position = [1,1,-5.5]
-            
         )
+        self.enemytarget = bacteriamanobject.position
+        
     
     def boxCollider(self, z1, z2, x1, x2, y1, y2):
         global beforePosx
@@ -266,13 +269,31 @@ class Scene:
                 #Check if before collsiion x was in collider
              if beforePosx < x1 and beforePosx > x2 :
                 self.player.position[0] = beforePosz
+    def normalizevector(self, vec):
+         length = math.sqrt(vec[0]**2 + vec[1]**2 + vec[2]**2)
 
+         return [vec[0]/length,vec[1]/length,vec[2]/length]
+    def Abs(self, number):
+         if number < 0:
+              number *= -1
+         return number
+
+    def magnitude(self, V):
+         return self.Abs(V[0]) +self.Abs(V[1]) +self.Abs(V[2])  
+    def randomtarget(self):
+         global bacteriamanobject, randomenemypositions
+         bacteriamanobject.position = randomenemypositions[random.randrange(0, len(randomenemypositions))]
+         
+         return self.player.position
     def moveenemy(self):
-        targetpos = [self.player.position[0] - bacteriamanobject.position[0],
-                     self.player.position[1] - bacteriamanobject.position[1],
-                     self.player.position[2] - bacteriamanobject.position[2]]
-        bacteriamanobject.position[0] += targetpos[0]/1320
-        bacteriamanobject.position[1] += targetpos[1]/1320
+        if self.Abs(self.magnitude(self.enemytarget) - self.magnitude(bacteriamanobject.position)) < 0.02:
+             self.enemytarget = self.randomtarget()
+        targetpos = [self.enemytarget[0] - bacteriamanobject.position[0],
+                     self.enemytarget[1] - bacteriamanobject.position[1],
+                     self.enemytarget[2] - bacteriamanobject.position[2]]
+        targetpos = self.normalizevector(targetpos)
+        bacteriamanobject.position[0] += targetpos[0]/35
+        bacteriamanobject.position[1] += targetpos[1]/35
     def update(self, rate):
         global beforekeys,bacteriamanobject
         global beforePosx, beforePosz,beforePosy
@@ -284,7 +305,7 @@ class Scene:
         self.is_grounded = False
 
         #move bacteriaman
-        moveenemy()
+        self.moveenemy()
         
           
         mapcolliders = [Scene.boxCollider(self, -4, 4, -2.8, -4.5, -7, 10),
