@@ -1,4 +1,7 @@
 
+
+from tkinter import N
+from tkinter.tix import Tree
 from turtle import pos
 from typing_extensions import Self
 import pygame as pg
@@ -8,7 +11,7 @@ import numpy as np
 import pyrr
 import math
 import random
-
+from numba import *
 from functools import *
 
 
@@ -146,13 +149,13 @@ class Light:
 class Player:
 
     
+    
     def __init__(self, position):
 
         self.position = np.array(position, dtype = np.float32)
         self.theta = 0
         self.phi = 0
         self.update_vectors()
-    
     def update_vectors(self):
 
         self.forwards = np.array(
@@ -197,28 +200,30 @@ class Scene:
                 eulers = [0,0,0]
             )
         ]
-
+        
         self.lights = [
            Light(
-                position = [1, 4, -4],
+                position = [0, 3, -5.5],
                 color = (1, 1, 1), strength= 3
                 
             ),
             Light(
-                position = [1, 1, -4],
+                position = [0, 13, -5.5],
                 color = (1, 1, 1), strength= 3
+                
             )
+            
            
         ]
 
         
 
         self.player = Player(
-            position = [1,1,1]
+            position = [1,1,-5.5]
             
         )
     
-    def roomCollider(self, graviy, wall, wall_m ,wallz, wallz_m, wally):
+    def roomCollider(self, graviy, wall, wall_m ,wallz, wallz_m, wally, r, l, ro, lo):
         global beforePosx
         global beforePosz
         global beforePosy
@@ -241,29 +246,49 @@ class Scene:
          #   cube.eulers[1] += 0.25 * rate
           #  if cube.eulers[1] > 360:
            #     cube.eulers[1] -= 360
-        if self.player.position[1] > wall or self.player.position[1] < wall_m:
-            self.player.position[1] = beforePosx
-            #print("colide")
+        if r == True and l == True:
+            if self.player.position[1] > wall or self.player.position[1] < wall_m:
+                self.player.position[1] = beforePosx
+            else:
+                beforePosx = self.player.position[1]
+        elif r == True and l == False:
+            if self.player.position[1] < wall_m:
+                self.player.position[1] = beforePosx
+            else:
+                beforePosx = self.player.position[1]
+        elif r == False and l == True:
+            if self.player.position[1] > wall:
+                self.player.position[1] = beforePosx
+                #print("colide")
 
-        else:
-            beforePosx = self.player.position[1]
-            #print("notColide")
+            else:
+                beforePosx = self.player.position[1]
+                #print("notColide")
 
-        if self.player.position[0] > wallz or self.player.position[0] < wallz_m:
-            self.player.position[0] = beforePosz
-            #print("colide")
-            
-        else:
-            beforePosz = self.player.position[0]
-            #print("notColide")
+
+        if ro == True and lo == True:
+            if self.player.position[0] > wallz or self.player.position[0] < wallz_m:
+                self.player.position[0] = beforePosz
+            else:
+                beforePosz = self.player.position[0]
+        elif ro == True and lo == False:
+            if self.player.position[0] < wallz_m:
+                self.player.position[0] = beforePosz
+            else:
+                beforePosz = self.player.position[0]
+        if ro == False and lo == True:
+            if self.player.position[0] > wallz:
+                self.player.position[0] = beforePosz
+            else:
+                beforePosz = self.player.position[0]
     
     def update(self, rate):
         global beforekeys
         self.gravity = 0.51
-        self.jumpForce = .02
+        self.jumpForce = .01
         #self.floor = -7
         
-        Scene.roomCollider(self,self.gravity, 3.4, -3.4 , 3.4, -3.4 , -7.01)
+        Scene.roomCollider(self,self.gravity, 3.35, -3.55 , 3.35, -3.35 , -6.5, False, False, True, True)
         
         
 
@@ -390,8 +415,8 @@ class App:
                 directionModifier = 315
             
             dPos = [
-                0.013 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
-                0.013 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
+                0.01 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
+                0.01 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
                 
                 0
             ]
@@ -451,34 +476,56 @@ class GraphicsEngine:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         #create renderpasses and resources
-        shader = self.createShader("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/shaders/vertex.txt", "E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/shaders/fragment.txt")
+        shader = self.createShader("D:/git/revolver-lite/pythonEngine/shaders/vertex.txt", "D:/git/revolver-lite/pythonEngine/shaders/fragment.txt")
         self.texturedLitPass = RenderPassTexturedLit3D(shader)
 
         #MESH
-        self.wall = Mesh("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/models/wallfull.obj", 1, 4)
-        self.floor = Mesh("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/models/floor2.obj", 1, 200)
+        self.wall = Mesh("D:/git/revolver-lite/pythonEngine/models/wallfull.obj", 1, 4)
+        self.wallbounds = Mesh("D:/git/revolver-lite/pythonEngine/models/wallbounds.obj", 1, 4)
+        self.floor = Mesh("D:/git/revolver-lite/pythonEngine/models/floor2.obj", 1, 200)
+        self.ceilingFloor = Mesh("D:/git/revolver-lite/pythonEngine/models/floor2.obj", 1, 70)
         
         
 
         #TEXTURES
-        self.walltexture = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/Leather035C_2K_Color.jpg")
-        self.floortexture = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/wood2.jpg")
-        self.medkit_texture = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/woodrte.jpg")
+        self.walltexture = Material("D:/git/revolver-lite/pythonEngine/gfx/Leather035C_2K_Color.jpg")
+        self.floortexture = Material("D:/git/revolver-lite/pythonEngine/gfx/wood2.jpg")
+        self.floorbtexture = Material("D:/git/revolver-lite/pythonEngine/gfx/woodb.jpg")
+        self.medkit_texture = Material("D:/git/revolver-lite/pythonEngine/gfx/woodrte.jpg")
+        self.ceilingg = Material("D:/git/revolver-lite/pythonEngine/gfx/ofce.jpg")
 
         #BILLBOARDS
         self.medkit_billboard = BillBoard(w = 0.6, h = 0.5)
        
         
-        shader = self.createShader("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/shaders/vertex_light.txt", "E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/shaders/fragment_light.txt")
+        shader = self.createShader("D:/git/revolver-lite/pythonEngine/shaders/vertex_light.txt", "D:/git/revolver-lite/pythonEngine/shaders/fragment_light.txt")
         self.texturedPass = RenderPassTextured3D(shader)
-        self.light_texture = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/lightPlaceHolder.png")
+        self.light_texture = Material("D:/git/revolver-lite/pythonEngine/gfx/lightPlaceHolder.png")
         self.light_billboard = BillBoard(w = 0.2, h = 0.1)
 
 
         global NonScriptableObjects
-        NonScriptableObjects = [SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [4,0,-6.5], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-4,0,-6.5], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.floor, tex = self.floortexture ,position = [0,0,-9], eulers = [90,0,0])]
+        NonScriptableObjects = [SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [4,0,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-4,0,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.floor, tex = self.floortexture ,position = [0,0,-9], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.ceilingFloor, tex = self.ceilingg ,position = [0,0,-2.5], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-4,0,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [4,0,-5.8], eulers = [90,0,0])
+        
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-4, 6.9,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-4,6.9,-5.8], eulers = [90,0,0]),
+        
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [4, 6.9,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [4,6.9,-5.8], eulers = [90,0,0]),
+        
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, 9,-6], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,9,-6], eulers = [90,0,90]),
+        
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, -3.4,-6], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,-3.4,-6], eulers = [90,0,90]),
+        
+        ]
         
 
         
@@ -507,10 +554,12 @@ class GraphicsEngine:
 
         pg.display.flip()
 
-   
+    
     def destroy(self):
 
         self.floor.destroy()
+        self.ceilingg.destroy()
+        self.floorbtexture.destroy()
         self.walltexture.destroy()
         self.medkit_billboard.destroy()
         self.medkit_texture.destroy()
@@ -556,29 +605,9 @@ class RenderPassTexturedLit3D:
         }
         self.cameraPosLoc = glGetUniformLocation(self.shader, "cameraPostion")
     #cant cache
+    
     def render(self, scene, engine):
         
-        
-        glUseProgram(self.shader)
-
-        view_transform = pyrr.matrix44.create_look_at(
-            eye = scene.player.position,
-            target = scene.player.position + scene.player.forwards,
-            up = scene.player.up, dtype = np.float32
-        )
-        glUniformMatrix4fv(self.viewMatrixLocation, 1, GL_FALSE, view_transform)
-
-        glUniform3fv(self.cameraPosLoc, 1, scene.player.position)
-
-        for i,light in enumerate(scene.lights):
-            glUniform3fv(self.lightLocation["position"][i], 1, light.position)
-            glUniform3fv(self.lightLocation["color"][i], 1, light.color)
-            glUniform1f(self.lightLocation["strength"][i], light.strength)
-       
-        #NonScriptableObjects = [SimpleComponent(mesh = engine.ca,position = [6,0,1], eulers = [0,0,0]),]
-        #def createNonObjects():
-        
-            
         def createNonObjects():
             
             for nonscriptname in NonScriptableObjects:
@@ -600,7 +629,28 @@ class RenderPassTexturedLit3D:
                 nonscriptname.tex.use()
                 glBindVertexArray(nonscriptname.mesh.vao)
                 glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
-                
+        
+        glUseProgram(self.shader)
+
+        view_transform = pyrr.matrix44.create_look_at(
+            eye = scene.player.position,
+            target = scene.player.position + scene.player.forwards,
+            up = scene.player.up, dtype = np.float32
+        )
+        glUniformMatrix4fv(self.viewMatrixLocation, 1, GL_FALSE, view_transform)
+
+        glUniform3fv(self.cameraPosLoc, 1, scene.player.position)
+
+        for i,light in enumerate(scene.lights):
+            glUniform3fv(self.lightLocation["position"][i], 1, light.position)
+            glUniform3fv(self.lightLocation["color"][i], 1, light.color)
+            glUniform1f(self.lightLocation["strength"][i], light.strength)
+       
+        #NonScriptableObjects = [SimpleComponent(mesh = engine.ca,position = [6,0,1], eulers = [0,0,0]),]
+        #def createNonObjects():
+        
+        
+        
         createNonObjects()
         
         
