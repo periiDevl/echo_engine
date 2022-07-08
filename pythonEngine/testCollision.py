@@ -185,15 +185,17 @@ global beforePosy
 beforePosy = 0
 
 
+global bacteriamanobject 
 
 class Scene:
     global beforekeys,collide
     global speed, runspeed
     beforekeys = []
-    velocityY = 0
+    velocityY = 0.01
     keys = []
     
     def __init__(self):
+        self.curspeed = 0
         self.medkits = [
             SimpleComponent(
                 mesh = 'monkey',
@@ -226,122 +228,98 @@ class Scene:
             
         )
     
-    def roomCollider(self, graviy, wallx, wallx_m ,wallz, wallz_m, wally, canX, canXM, canZ, canZM):
-        global beforePosx
-        global beforePosz
-        global beforePosy
-        
-        if self.player.position[2] < wally:
-            #self.gravity = -0.01
-            self.is_grounded = True
-            if (self.velocityY < 0):
-                self.player.position[2] -= self.velocityY
-        else:
-            self.velocityY += (1 /  60) * (1 / 60) * self.gravity
-            self.is_grounded = False
-            self.player.position[2] -= self.velocityY
-
-        if self.player.position[1] < wallx and self.player.position[1] > wallx_m:
-            if canZ == True and canZM == True:
-                
-                if self.player.position[0] > wallz or self.player.position[0] < wallz_m:
-                    #self.player.position[0] < wallz_m
-                    print("Moved [0] ---- 0001 z="+str(self.player.position[0] > wallz) + " zm="+ str(self.player.position[0] < wallz_m))
-                    self.player.position[0] = beforePosz
-                else:
-                    beforePosz = self.player.position[0]
-            elif canZ == True and canZM == False:
-                if self.player.position[0] < wallz_m:
-                    print("Moved [0] ---- 0002")
-                    self.player.position[0] = beforePosz
-                else:
-                    beforePosz = self.player.position[0]
-            elif canZ == False and canZM == True:
-                if self.player.position[0] > wallz:
-                    print("Moved [0] ---- 0003")
-                    self.player.position[0] = beforePosz
-                else:
-                    beforePosz = self.player.position[0]
-
-        if self.player.position[0] < wallz and self.player.position[0] > wallz_m:
-            if canX == True and canXM == True:
-                if self.player.position[1] > wallx or self.player.position[1] < wallx_m:
-                    print("Moved [1] ---- 0001")
-                    self.player.position[1] = beforePosx
-                else:
-                    beforePosx = self.player.position[1]
-            elif canX == True and canXM == False:
-                if self.player.position[1] < wallx_m:
-                    print("Moved [1] ---- 0002")
-                    self.player.position[1] = beforePosx
-                else:
-                    beforePosx = self.player.position[1]
-            elif canX == False and canXM == True:
-                if self.player.position[1] > wallx:
-                    print("Moved [1] ---- 0003")
-                    self.player.position[1] = beforePosx
-                    #print("colide")
-
-                else:
-                    beforePosx = self.player.position[1]
-                    #print("notColide")
     def boxCollider(self, z1, z2, x1, x2, y1, y2):
         global beforePosx
         global beforePosz
         global beforePosy
 
-        # Check if inside the box at X-axis and Check if inside the box at Z-axis
-        if self.player.position[1] < x1 and self.player.position[1] > x2 and self.player.position[0] > z1 and self.player.position[0] < z2:
-            #print(self.player.position[1] < x1 and self.player.position[1] > x2)
-             
-             if not beforePosz < z1 and not beforePosz > z2 and not beforePosx < x1 and not beforePosx > x2:
-                self.player.position[0] = beforePosz
-                self.player.position[1] = beforePosx
+        # Check if inside the box at X-axis and Check if inside the box at Z-axis and Check if inside the box at Y-axis
+        if self.player.position[1] < x1 and self.player.position[1] > x2 and self.player.position[0] > z1 and self.player.position[0] < z2 and self.player.position[2] > y1 and self.player.position[2] < y2:
                 #Check if before collsiion z was in collider
-             if beforePosz > z1 and beforePosz < z2:
+             if beforePosz > z1 and beforePosz < z2 :
                 self.player.position[1] = beforePosx
                 #Check if before collsiion x was in collider
-             if beforePosx < x1 and beforePosx > x2:
+             if beforePosx < x1 and beforePosx > x2 :
                 self.player.position[0] = beforePosz
+    
+              
              return True
         else:
              return False
 
 
-     
+    def groundCollider(self, z1, z2, x1, x2, y1, y2):
+        global beforePosx
+        global beforePosz
+        global beforePosy
+
+        # Check if inside the box at X-axis and Check if inside the box at Z-axis and Check if inside the box at Y-axis
+        if self.player.position[1] < x1 and self.player.position[1] > x2 and self.player.position[0] > z1 and self.player.position[0] < z2 and self.player.position[2] > y1 and self.player.position[2] < y2:
+             if beforePosz > z1 and beforePosz < z2 and beforePosx < x1 and beforePosx > x2:
+                self.is_grounded = True
+                self.velocityY = 0
+                self.player.position[2] = beforePosy
+                return True
+                #Check if before collsiion z was in collider
+             if beforePosz > z1 and beforePosz < z2 :
+                self.player.position[1] = beforePosx
+                #Check if before collsiion x was in collider
+             if beforePosx < x1 and beforePosx > x2 :
+                self.player.position[0] = beforePosz
+
+    def moveenemy(self):
+        targetpos = [self.player.position[0] - bacteriamanobject.position[0],
+                     self.player.position[1] - bacteriamanobject.position[1],
+                     self.player.position[2] - bacteriamanobject.position[2]]
+        bacteriamanobject.position[0] += targetpos[0]/1320
+        bacteriamanobject.position[1] += targetpos[1]/1320
     def update(self, rate):
-        global beforekeys
-        global beforePosx, beforePosz
+        global beforekeys,bacteriamanobject
+        global beforePosx, beforePosz,beforePosy
         self.gravity = 1
         self.jumpForce = .025
         self.speed = 3
         self.runspeed = 7
         self.curspeed = self.speed
-        #self.floor = -7                                                                                                                                                                                                                                                                                                                                                                                                                                            
+        self.is_grounded = False
+
+        #move bacteriaman
+        moveenemy()
         
-        #Scene.roomCollider(self,self.gravity, 8.35, -2.8 , 3, -3 , -6.5, False, True, True, True)
-        mapcolliders = [Scene.boxCollider(self, -4, 4, -2.8, -4.5, -6.5, 0),
-                     Scene.boxCollider(self, -4, 4, 10.3, 8, -6.5, 0),
-                     Scene.boxCollider(self, 2.5, 4.5, 11.3, -4, -6.5, 0)] 
+          
+        mapcolliders = [Scene.boxCollider(self, -4, 4, -2.8, -4.5, -7, 10),
+                     Scene.boxCollider(self, -4, 4, 10.3, 8, -7, 10),
+                     Scene.boxCollider(self, 2.5, 4.5, 11.3, -4, -7, 10),
+                     
+                     Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5)] 
         collide = False
         for col in mapcolliders:
              if col:
                   collider = True
+        
          
         keys = pg.key.get_pressed()
+
+        
         if beforekeys != None:
             if keys[pg.K_SPACE] and not beforekeys[pg.K_SPACE] and self.is_grounded:
-                self.velocityY = -self.jumpForce
+                self.velocityY = self.jumpForce
         if keys[pg.K_LSHIFT]:
-             self.curspeed = self.runspeed
              print(self.player.position)
+             self.curspeed = self.runspeed
+        if keys[pg.K_t]:
+             bacteriamanobject.position[1] = self.player.position[1]
 
              
         beforekeys = pg.key.get_pressed()
-        
+        if not self.is_grounded:
+             self.velocityY += -self.gravity * (1/60) * (1/60)
+        self.player.position[2] += self.velocityY
         if not collide:
              beforePosz = self.player.position[0]
              beforePosx = self.player.position[1]
+             beforePosy = self.player.position[2]
+             
         
         
     def move_player(self, dPos):
@@ -515,12 +493,16 @@ class GraphicsEngine:
         
         self.monkey = Mesh("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/models/wallfull.obj", 1, 4)        
 
+        self.bacteriaman = Mesh("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/models/bacteria man.obj", .3, 1)
+
+        
         #TEXTURES
         self.walltexture = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/Leather035C_2K_Color.jpg")
         self.floortexture = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/wood2.jpg")
         self.floorbtexture = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/woodb.jpg")
         self.medkit_texture = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/woodrte.jpg")
         self.ceilingg = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/ofce.jpg")
+        self.bacteriamantexture = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/BacteriaManTexture.png")
 
         #BILLBOARDS
         self.medkit_billboard = BillBoard(w = 0.6, h = 0.5)
@@ -530,8 +512,8 @@ class GraphicsEngine:
         self.texturedPass = RenderPassTextured3D(shader)
         self.light_texture = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/lightPlaceHolder.png")
         self.light_billboard = BillBoard(w = 0.2, h = 0.1)
-
-
+        global bacteriamanobject
+        bacteriamanobject = SimpleComponent(mesh = self.bacteriaman, tex = self.bacteriamantexture ,position = [0,-12.4,-5.8], eulers = [270,0,90])
         global NonScriptableObjects
         NonScriptableObjects = [SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [3.7,0,-5.8], eulers = [90,0,0]),
         SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-3.7,0,-5.8], eulers = [90,0,0]),
@@ -552,7 +534,8 @@ class GraphicsEngine:
         
         SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, -3.4,-5.8], eulers = [90,0,90]),
         SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,-3.4,-5.8], eulers = [90,0,90]),
-        
+
+        bacteriamanobject
         ]
         
 
@@ -595,6 +578,8 @@ class GraphicsEngine:
         self.light_texture.destroy()
         self.texturedLitPass.destroy()
         self.texturedPass.destroy()
+        self.bacteriaman.destroy()
+        self.bacteriamantexture.destroy()
         pg.quit()
 
 class RenderPassTexturedLit3D:

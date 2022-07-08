@@ -1,0 +1,13 @@
+# Blender MTL File: 'bacteria man.blend'
+# Material Count: 1
+
+newmtl Material.002
+Ns 320.525523
+Ka 0.344086 0.344086 0.344086
+Kd 0.001655 0.000071 0.000096
+Ks 0.347243 0.347243 0.347243
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 3
+map_Bump -bm 0.400000 C:\\Users\\user\\AppData\\Local\\Temp\\Rar$DIa29040.15585\\3486f84134483c139f7298b5d3d6aca8--maps-texture.jpg
