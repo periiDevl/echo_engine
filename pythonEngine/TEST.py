@@ -13,7 +13,8 @@ from numba import *
 from functools import *
 
 
-
+global maplevel
+maplevel = 0
 
 class Mesh:
 
@@ -311,15 +312,19 @@ class Scene:
         #move bacteriaman
         self.moveenemy()
         
-          
-        mapcolliders = [Scene.groundCollider(self, -4, 4, -2.8, -4.5, -7, 0),
-                     Scene.groundCollider(self, -4, 4, 10.3, 8.4, -7, 0),
-                     Scene.groundCollider(self, 3, 4.5, 11.3, -4, -7, 0),
-                     Scene.groundCollider(self, -4, -3, 11.3, -4, -7, 0),
-                     Scene.groundCollider(self, -0.6, 0.5, 2.6, -11, -7, 0),
-                     Scene.groundCollider(self, 1, 3, 8.5, 6.7, -7, -6),
-                     Scene.groundCollider(self, -3, -1, -2.65, -6.7, -7, -6),
-                     Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5)]
+        
+        if maplevel == 0:
+            mapcolliders = [Scene.groundCollider(self, -4, 4, -2.8, -4.5, -7, 0),
+                         Scene.groundCollider(self, -4, 4, 10.3, 8.4, -7, 0),
+                         Scene.groundCollider(self, 3, 4.5, 11.3, -4, -7, 0),
+                         Scene.groundCollider(self, -4, -3, 11.3, -4, -7, 0),
+                         Scene.groundCollider(self, -0.6, 0.5, 2.6, -11, -7, 0),
+                         Scene.groundCollider(self, 1, 3, 8.5, 6.7, -7, -6),
+                         Scene.groundCollider(self, -3, -1, -2.65, -6.7, -7, -6),
+                         Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5)]
+        if maplevel == 1:
+            mapcolliders = [Scene.groundCollider(self, -4, 4, -2.8, -4.5, -7, 0)]
+        
         collide = False
         for col in mapcolliders:
              if col:
@@ -572,37 +577,39 @@ class GraphicsEngine:
         global bacteriamanobject
         bacteriamanobject = SimpleComponent(mesh = self.bacteriaman, tex = self.bacteriamantexture ,position = [0,-12.4,-5.8], eulers = [270,0,90])
         global NonScriptableObjects
-        NonScriptableObjects = [SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [3.7,0,-5.8], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-3.7,0,-5.8], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.floor, tex = self.floortexture ,position = [0,0,-9], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.ceilingFloor, tex = self.ceilingg ,position = [0,0,-2.5], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.poster, tex = self.posterTexture ,position = [2,8.6,-5.8], eulers = [-90,-90, 0]),
-        SimpleComponent(mesh = self.table, tex = self.floorbtexture ,position = [2,7.7,-7.8], eulers = [-90,0, 90]),
+        global maplevel
+        if maplevel == 0:
+            NonScriptableObjects = [SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [3.7,0,-5.8], eulers = [90,0,0]),
+            SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-3.7,0,-5.8], eulers = [90,0,0]),
+            SimpleComponent(mesh = self.floor, tex = self.floortexture ,position = [0,0,-9], eulers = [90,0,0]),
+            SimpleComponent(mesh = self.ceilingFloor, tex = self.ceilingg ,position = [0,0,-2.5], eulers = [90,0,0]),
+            SimpleComponent(mesh = self.poster, tex = self.posterTexture ,position = [2,8.6,-5.8], eulers = [-90,-90, 0]),
+            SimpleComponent(mesh = self.table, tex = self.floorbtexture ,position = [2,7.7,-7.8], eulers = [-90,0, 90]),
 
-        
-        SimpleComponent(mesh = self.doorpart1, tex = self.floorbtexture ,position = [-2,-2.9,-6.62], eulers = [90,0,90]),
-        SimpleComponent(mesh = self.doorpart2, tex = self.doorpart2Tex ,position = [-2.1,-2.8,-6.62], eulers = [90,0,90]),
-        SimpleComponent(mesh = self.doorpart3, tex = self.doorpart3Tex ,position = [-2,-2.9,-6.62], eulers = [90,0,90]),
-        SimpleComponent(mesh = self.doorpart2, tex = self.doorpart2wTex ,position = [-1.4,-2.8,-6.62], eulers = [90,0,90]),
-        
+            
+            SimpleComponent(mesh = self.doorpart1, tex = self.floorbtexture ,position = [-2,-2.9,-6.62], eulers = [90,0,90]),
+            SimpleComponent(mesh = self.doorpart2, tex = self.doorpart2Tex ,position = [-2.1,-2.8,-6.62], eulers = [90,0,90]),
+            SimpleComponent(mesh = self.doorpart3, tex = self.doorpart3Tex ,position = [-2,-2.9,-6.62], eulers = [90,0,90]),
+            SimpleComponent(mesh = self.doorpart2, tex = self.doorpart2wTex ,position = [-1.4,-2.8,-6.62], eulers = [90,0,90]),
+            
 
-        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-3.7,0,-5.8], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [3.7,0,-5.8], eulers = [90,0,0]),
+            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-3.7,0,-5.8], eulers = [90,0,0]),
+            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [3.7,0,-5.8], eulers = [90,0,0]),
 
-        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-3.7, 6.9,-5.8], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-3.7,6.9,-5.8], eulers = [90,0,0]),
-        
-        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [3.7, 6.9,-5.8], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [3.7,6.9,-5.8], eulers = [90,0,0]),
-        
-        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, 9,-5.8], eulers = [90,0,90]),
-        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,9,-5.8], eulers = [90,0,90]),
-        
-        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, -3.4,-5.8], eulers = [90,0,90]),
-        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,-3.4,-5.8], eulers = [90,0,90]),
+            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-3.7, 6.9,-5.8], eulers = [90,0,0]),
+            SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-3.7,6.9,-5.8], eulers = [90,0,0]),
+            
+            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [3.7, 6.9,-5.8], eulers = [90,0,0]),
+            SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [3.7,6.9,-5.8], eulers = [90,0,0]),
+            
+            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, 9,-5.8], eulers = [90,0,90]),
+            SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,9,-5.8], eulers = [90,0,90]),
+            
+            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, -3.4,-5.8], eulers = [90,0,90]),
+            SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,-3.4,-5.8], eulers = [90,0,90]),
 
-        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, -1,-5.8], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,-1,-5.8], eulers = [90,0,0]),
+            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, -1,-5.8], eulers = [90,0,0]),
+            SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,-1,-5.8], eulers = [90,0,0]),
 
 
         bacteriamanobject
