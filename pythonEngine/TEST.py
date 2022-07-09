@@ -1,9 +1,6 @@
 
 
-from tkinter import N
-from tkinter.tix import Tree
-from turtle import pos
-from typing_extensions import Self
+
 import pygame as pg
 
 from OpenGL.GL import *
@@ -394,7 +391,11 @@ class App:
         self.mainLoop()
     
     def mainLoop(self):
-        
+        pg.mixer.init()
+        walkSound = pg.mixer.Sound('sounds/walkingOnWoodSound.mp3')
+        backroundSounds = pg.mixer.Sound('sounds/LightBuzz.mp3')
+        backroundSounds.play(-1)
+        backroundSounds.set_volume(0.008)
         running = True
         self.scene.beforekeys = pg.key.get_pressed()
         while (running):
@@ -403,9 +404,22 @@ class App:
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     running = False
-                elif event.type == pg.KEYDOWN:
+                if event.type == pg.KEYDOWN:
                     if event.key == pg.K_ESCAPE:
                         running = False
+                    if event.key == pg.K_w or event.key == pg.K_a or event.key == pg.K_d or event.key == pg.K_s:
+                        
+                        walkSound.play(-1)
+
+                        walkSound.set_volume(0.025)
+
+                
+            pressed_keys = pg.key.get_pressed()
+            if not pressed_keys[pg.K_w] and not pressed_keys[pg.K_s] and not pressed_keys[pg.K_a] and not pressed_keys[pg.K_d]:
+                        
+                walkSound.stop()
+
+                walkSound.set_volume(0.025)
                 
                
             
@@ -452,8 +466,8 @@ class App:
                 directionModifier = 315
             
             dPos = [
-                (1 / 60) * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
-                (1 / 60) * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
+                (0.15 / 60) * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
+                (0.15 / 60) * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
                 
                 0
             ]
@@ -649,10 +663,11 @@ class GraphicsEngine:
 
 #load the music
 
-pg.mixer.init()
-pg.mixer.music.load("sounds/LightBuzz.mp3")
-#play the music infinite
-pg.mixer.music.play(-1)
+#pg.mixer.init()
+#buzz = pg.mixer.Sound('sounds/LightBuzz.mp3')
+#buzz.play()
+
+#buzz.set_volume(0.008)
 class RenderPassTexturedLit3D:
 
     @lru_cache(maxsize=None)
