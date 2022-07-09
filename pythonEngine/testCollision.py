@@ -292,8 +292,14 @@ class Scene:
                      self.enemytarget[1] - bacteriamanobject.position[1],
                      self.enemytarget[2] - bacteriamanobject.position[2]]
         targetpos = self.normalizevector(targetpos)
-        bacteriamanobject.position[0] += targetpos[0]/35
-        bacteriamanobject.position[1] += targetpos[1]/35
+        bacteriamanobject.position[0] += targetpos[0]/135
+        bacteriamanobject.position[1] += targetpos[1]/135
+
+        direction = self.enemytarget - bacteriamanobject.position
+        angle = math.atan2(direction[0], direction[1]) * 57.29578 + 90
+        bacteriamanobject.eulers[2] = angle
+
+        
     def update(self, rate):
         global beforekeys,bacteriamanobject
         global beforePosx, beforePosz,beforePosy
@@ -301,17 +307,20 @@ class Scene:
         self.jumpForce = .025
         self.speed = 3
         self.runspeed = 7
+        self.crouchspeed = 0.35
         self.curspeed = self.speed
         self.is_grounded = False
 
         #move bacteriaman
-        self.moveenemy()
+        #self.moveenemy()
         
           
-        mapcolliders = [Scene.boxCollider(self, -4, 4, -2.8, -4.5, -7, 10),
-                     Scene.boxCollider(self, -4, 4, 10.3, 8, -7, 10),
-                     Scene.boxCollider(self, 2.5, 4.5, 11.3, -4, -7, 10),
-                     
+        mapcolliders = [Scene.boxCollider(self, 0.75, 3, 5.6, -1.65, -7, 10),
+                     Scene.boxCollider(self,-4.25, -3, 9.55,-4.6, -7, 10),
+                     Scene.boxCollider(self, -3.6, 3.6, 9.54, 8.5, -7, 10),
+                     Scene.boxCollider(self, -15.15, -14, 5.68, -1.57, -7, 10),
+                     Scene.boxCollider(self, -14.46, -7.4, -0.417, -1.564, -7, 10),
+                     Scene.boxCollider(self, -14.46, -7.4, -0.417+6, -1.564+6, -7, 10),
                      Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5)] 
         collide = False
         for col in mapcolliders:
@@ -328,6 +337,8 @@ class Scene:
         if keys[pg.K_LSHIFT]:
              print(self.player.position)
              self.curspeed = self.runspeed
+        if keys[pg.K_LCTRL]:
+             self.curspeed = self.crouchspeed
         if keys[pg.K_t]:
              bacteriamanobject.position[1] = self.player.position[1]
 
@@ -362,7 +373,7 @@ class Scene:
             89, max(-89, self.player.phi + dPhi)
         )
         self.player.update_vectors()
-
+global Frames, FPS
 class App:
 
     
@@ -384,7 +395,7 @@ class App:
         self.mainLoop()
     
     def mainLoop(self):
-        
+        global Frames
         running = True
         self.scene.beforekeys = pg.key.get_pressed()
         while (running):
@@ -536,26 +547,51 @@ class GraphicsEngine:
         global bacteriamanobject
         bacteriamanobject = SimpleComponent(mesh = self.bacteriaman, tex = self.bacteriamantexture ,position = [0,-12.4,-5.8], eulers = [270,0,90])
         global NonScriptableObjects
-        NonScriptableObjects = [SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [3.7,0,-5.8], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-3.7,0,-5.8], eulers = [90,0,0]),
+        NonScriptableObjects = [
+          
         SimpleComponent(mesh = self.floor, tex = self.floortexture ,position = [0,0,-9], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.ceilingFloor, tex = self.ceilingg ,position = [0,0,-2.5], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-3.7,0,-5.8], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [3.7,0,-5.8], eulers = [90,0,0])
-        
+        SimpleComponent(mesh = self.ceilingFloor, tex = self.ceilingg ,position = [0,0,-2.5], eulers = [90,0,0])
         ,
-        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-3.7, 6.9,-5.8], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-3.7,6.9,-5.8], eulers = [90,0,0]),
-        
-        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [3.7, 6.9,-5.8], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [3.7,6.9,-5.8], eulers = [90,0,0]),
-        
+        # FIRST ROOM
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-3.7, 5.95,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-3.7,5.9,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-3.7,5.9-6.9,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-3.7,5.9-6.9,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [1.5, 2,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [1.5,2,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [2, 2,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [2,2,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [2.5, 2,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [2.5,2,-5.8], eulers = [90,0,0])
+        ,
         SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, 9,-5.8], eulers = [90,0,90]),
-        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,9,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,9,-5.8], eulers = [90,0,90])
+        ,
+        # SECOND ROOM
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-11, 5,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-11,5,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-11, -1,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-11,-1,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-14.5, 2,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-14.5,2,-5.8], eulers = [90,0,0])
+        ,
+        # THIRD ROOM
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [11, 5,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [11,5,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [11, -1,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [11,-1,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [14.5, 2,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [14.5,2,-5.8], eulers = [90,0,0])
+        ,
         
-        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, -3.4,-5.8], eulers = [90,0,90]),
-        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,-3.4,-5.8], eulers = [90,0,90]),
-
         bacteriamanobject
         ]
         
