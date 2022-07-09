@@ -218,8 +218,15 @@ class Scene:
                 position = [2, 0, -5],
                 color = (1, 1, 1), strength= 1.5
                 
-            )
+            ),
+
+            Light(
+                position = [-2, 0, -5],
+                color = (1, 1, 1), strength= 1.5
+                
+            ),
             
+           
            
         ]
 
@@ -298,7 +305,7 @@ class Scene:
         global beforekeys,bacteriamanobject
         global beforePosx, beforePosz,beforePosy
         self.gravity = 1
-        self.jumpForce = .025
+        self.jumpForce = .021
         self.speed = 3
         self.runspeed = 7
         self.curspeed = self.speed
@@ -308,12 +315,14 @@ class Scene:
         self.moveenemy()
         
           
-        mapcolliders = [Scene.boxCollider(self, -4, 4, -2.8, -4.5, -7, 10),
-                     Scene.boxCollider(self, -4, 4, 10.3, 8, -7, 10),
-                     Scene.boxCollider(self, 3, 4.5, 11.3, -4, -7, 10),
-                     Scene.boxCollider(self, -4, -3, 11.3, -4, -7, 10),
-                     Scene.boxCollider(self, -0.6, 0.5, 2.6, -11, -7, 10),
-                     Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5)] 
+        mapcolliders = [Scene.groundCollider(self, -4, 4, -2.8, -4.5, -7, 0),
+                     Scene.groundCollider(self, -4, 4, 10.3, 8.4, -7, 0),
+                     Scene.groundCollider(self, 3, 4.5, 11.3, -4, -7, 0),
+                     Scene.groundCollider(self, -4, -3, 11.3, -4, -7, 0),
+                     Scene.groundCollider(self, -0.6, 0.5, 2.6, -11, -7, 0),
+                     Scene.groundCollider(self, 1, 3, 8.5, 6.7, -7, -6),
+                     Scene.groundCollider(self, -3, -1, -2.65, -6.7, -7, -6),
+                     Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5)]
         collide = False
         for col in mapcolliders:
              if col:
@@ -514,9 +523,13 @@ class GraphicsEngine:
         self.ceilingFloor = Mesh("models/floor2.obj", 1, 70) 
         self.monkey = Mesh("models/wallfull.obj", 1, 4)        
         self.poster = Mesh("models/posterObj.obj", 0.3, 2.75)
+        self.table = Mesh("models/table.obj", 0.8, 4)
 
         self.bacteriaman = Mesh("models/bacteria man.obj", .3, 1)
 
+        self.doorpart1 = Mesh("models/doorpart1.obj", 0.5, 4)
+        self.doorpart2 = Mesh("models/doorpart2.obj", 0.5, 4)
+        self.doorpart3 = Mesh("models/doorpart3.obj", 0.5, 4)
         
         #TEXTURES
         self.walltexture = Material("gfx/Leather035C_2K_Color.jpg")
@@ -524,8 +537,12 @@ class GraphicsEngine:
         self.floorbtexture = Material("gfx/woodb.jpg")
         self.medkit_texture = Material("gfx/woodrte.jpg")
         self.ceilingg = Material("gfx/ofce.jpg")
-        self.bacteriamantexture = Material("gfx/BacteriaManTexture.png")
+        self.bacteriamantexture = Material("gfx/BacteriaManTexture.png") 
         self.posterTexture = Material("gfx/pos1 (2).png")
+
+        self.doorpart3Tex = Material("gfx/cone.jpg")
+        self.doorpart2Tex = Material("gfx/lev.jpg") 
+        self.doorpart2wTex = Material("gfx/lev.jpg") 
 
         #BILLBOARDS
         self.medkit_billboard = BillBoard(w = 0.6, h = 0.5)
@@ -542,10 +559,19 @@ class GraphicsEngine:
         SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-3.7,0,-5.8], eulers = [90,0,0]),
         SimpleComponent(mesh = self.floor, tex = self.floortexture ,position = [0,0,-9], eulers = [90,0,0]),
         SimpleComponent(mesh = self.ceilingFloor, tex = self.ceilingg ,position = [0,0,-2.5], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-3.7,0,-5.8], eulers = [90,0,0]),
-        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [3.7,0,-5.8], eulers = [90,0,0])
+        SimpleComponent(mesh = self.poster, tex = self.posterTexture ,position = [2,8.6,-5.8], eulers = [-90,-90, 0]),
+        SimpleComponent(mesh = self.table, tex = self.floorbtexture ,position = [2,7.7,-7.8], eulers = [-90,0, 90]),
+
         
-        ,
+        SimpleComponent(mesh = self.doorpart1, tex = self.floorbtexture ,position = [-2,-2.9,-6.62], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.doorpart2, tex = self.doorpart2Tex ,position = [-2.1,-2.8,-6.62], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.doorpart3, tex = self.doorpart3Tex ,position = [-2,-2.9,-6.62], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.doorpart2, tex = self.doorpart2wTex ,position = [-1.4,-2.8,-6.62], eulers = [90,0,90]),
+        
+
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-3.7,0,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [3.7,0,-5.8], eulers = [90,0,0]),
+
         SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-3.7, 6.9,-5.8], eulers = [90,0,0]),
         SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-3.7,6.9,-5.8], eulers = [90,0,0]),
         
@@ -561,7 +587,6 @@ class GraphicsEngine:
         SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, -1,-5.8], eulers = [90,0,0]),
         SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,-1,-5.8], eulers = [90,0,0]),
 
-        SimpleComponent(mesh = self.poster, tex = self.posterTexture ,position = [2,8.54,-5.8], eulers = [-90,-90, 0]),
 
         bacteriamanobject
         ]
@@ -595,7 +620,14 @@ class GraphicsEngine:
 
     
     def destroy(self):
+        self.doorpart1.destroy()
+        self.doorpart2.destroy()
+        self.doorpart2.destroy()
+        self.doorpart3Tex.destroy()
+        self.doorpart2Tex.destroy()
+        self.doorpart2wTex.destroy()
         self.poster.destroy()
+        self.table.destroy()
         self.posterTexture.destroy()
         self.floor.destroy()
         self.ceilingg.destroy()
@@ -634,15 +666,15 @@ class RenderPassTexturedLit3D:
         self.lightLocation = {
             "position": [
                 glGetUniformLocation(self.shader, f"Lights[{i}].position")
-                for i in range(8)
+                for i in range(20)
             ],
             "color": [
                 glGetUniformLocation(self.shader, f"Lights[{i}].color")
-                for i in range(8)
+                for i in range(20)
             ],
             "strength": [
                 glGetUniformLocation(self.shader, f"Lights[{i}].strength")
-                for i in range(8)
+                for i in range(20)
             ]
         }
         self.cameraPosLoc = glGetUniformLocation(self.shader, "cameraPostion")
