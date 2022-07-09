@@ -5,6 +5,7 @@ from tkinter.tix import Tree
 from turtle import pos
 from typing_extensions import Self
 import pygame as pg
+
 from OpenGL.GL import *
 from OpenGL.GL.shaders import compileProgram,compileShader
 import numpy as np
@@ -13,7 +14,6 @@ import math
 import random
 from numba import *
 from functools import *
-
 
 
 
@@ -495,6 +495,7 @@ class GraphicsEngine:
 
         #initialise pygame
         pg.init()
+        
         pg.mouse.set_visible(False)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
@@ -503,6 +504,8 @@ class GraphicsEngine:
         #window
         pg.display.set_mode((1200,800), pg.OPENGL|pg.DOUBLEBUF)
 
+
+        
         #initialise opengl
         glClearColor(0.0, 0.0, 0.0, 1)
         
@@ -643,6 +646,13 @@ class GraphicsEngine:
         self.bacteriamantexture.destroy()
         pg.quit()
 
+
+#load the music
+
+pg.mixer.init()
+pg.mixer.music.load("sounds/LightBuzz.mp3")
+#play the music infinite
+pg.mixer.music.play(-1)
 class RenderPassTexturedLit3D:
 
     @lru_cache(maxsize=None)
