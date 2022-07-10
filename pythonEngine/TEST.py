@@ -320,10 +320,21 @@ class RenderPassTexturedLit3D:
 
         glUniform3fv(self.cameraPosLoc, 1, scene.player.position)
 
-        for i,light in enumerate(scene.lights):
-            glUniform3fv(self.lightLocation["position"][i], 1, light.position)
-            glUniform3fv(self.lightLocation["color"][i], 1, light.color)
-            glUniform1f(self.lightLocation["strength"][i], light.strength)
+        if maplevel == 0:
+            for i,light in enumerate(scene.lights):
+                glUniform3fv(self.lightLocation["position"][i], 1, light.position)
+                glUniform3fv(self.lightLocation["color"][i], 1, light.color)
+                glUniform1f(self.lightLocation["strength"][i], light.strength)
+        if maplevel == 1:
+            for i,light in enumerate(scene.lightslevtwo):
+                glUniform3fv(self.lightLocation["position"][i], 1, light.position)
+                glUniform3fv(self.lightLocation["color"][i], 1, light.color)
+                glUniform1f(self.lightLocation["strength"][i], light.strength)
+        if maplevel == 2:
+            for i,light in enumerate(scene.lightslevthree):
+                glUniform3fv(self.lightLocation["position"][i], 1, light.position)
+                glUniform3fv(self.lightLocation["color"][i], 1, light.color)
+                glUniform1f(self.lightLocation["strength"][i], light.strength)
        
         #leveloneobjects = [SimpleComponent(mesh = engine.ca,position = [6,0,1], eulers = [0,0,0]),]
         #def createNonObjects():
@@ -469,10 +480,10 @@ class GraphicsEngine:
         self.light_texture = Material("gfx/lightPlaceHolder.png")
         self.light_billboard = BillBoard(w = 0.2, h = 0.1)
         global boobj
-        boobj = [SimpleComponent(mesh = self.boo_body, tex = self.boo_body_texture ,position = [0,-12.4,-5.8], eulers = [270,0,90]),
-                 SimpleComponent(mesh = self.boo_eye, tex = self.boo_eye_texture ,position = [0,-12.4,-5.8], eulers = [270,0,90]),
-                 SimpleComponent(mesh = self.boo_eye_pup, tex = self.boo_eye_pup_texture ,position = [0,-12.4,-5.8], eulers = [270,0,90]),
-                 SimpleComponent(mesh = self.boo_bars, tex = self.boo_bars_texture ,position = [0,-12.4,-5.8], eulers = [270,0,90])]
+        boobj = [SimpleComponent(mesh = self.boo_body, tex = self.boo_body_texture ,position = [3.8,-9.6,-5.8], eulers = [270,0,90]),
+                 SimpleComponent(mesh = self.boo_eye, tex = self.boo_eye_texture ,position = [3.8,-9.6,-5.8], eulers = [270,0,90]),
+                 SimpleComponent(mesh = self.boo_eye_pup, tex = self.boo_eye_pup_texture ,position = [0,-9.6,-5.8], eulers = [270,0,90]),
+                 SimpleComponent(mesh = self.boo_bars, tex = self.boo_bars_texture ,position = [3.8,-9.6,-5.8], eulers = [270,0,90])]
         
         global maplevel
         
@@ -755,7 +766,8 @@ class Scene:
     global speed, runspeed
 
     global indexpatrol,indexpatrolpos
-    enemytarget = (enemyleveltwopartols()[indexpatrol])[indexpatrolpos]
+    enemytarget = (enemyleveltwopartols()[0])[0]
+    
     
     beforekeys = []
     velocityY = 0.01
@@ -852,7 +864,6 @@ class Scene:
                 eulers = [0,0,0]
             )
         ]
-        
         self.lights = [
            Light(
                 position = [0, 6, -5],
@@ -869,10 +880,104 @@ class Scene:
                 position = [-2, 0, -5],
                 color = (1, 1, 1), strength= 1.5
                 
+            ),]
+        self.lightslevtwo = [
+           
+            Light(
+                position = [0, 3, -5.5],
+                color = (1, 1, 1), strength= 3
+
             ),
-            
+            Light(
+                position = [12, 12, -5.5],
+                color = (1, 1, 1), strength= 3
+
+            ),
+           Light(
+                position = [0, 12, -5.5],
+                color = (1, 1, 1), strength= 3
+
+            ),
+           Light(
+                position = [-8, 12, -5.5],
+                color = (1, 1, 1), strength= 3
+
+            ),
+           Light(
+                position = [-10, 2, -5.5],
+                color = (1, 1, 1), strength= 3
+
+            ),
+           Light(
+                position = [-10, -6, -5.5],
+                color = (1, 1, 1), strength= 3
+
+            ),
+           Light(
+                position = [12, -6.5, -5.5],
+                color = (1, 1, 1), strength= 3
+
+            ),
+           Light(
+                position = [12, 2.5, -5.5],
+                color = (1, 1, 1), strength= 3
+
+            )
+
+
+        ]
+        self.lightslevthree = [
+           Light(
+                position = [11.365149, 15.442753, -5.5],
+                color = (1, 1, 1), strength= 3
+
+            ),
+
+           Light(
+                position = [-12.633909, -18.710358, -5.5],
+                color = (1, 1, 1), strength= 3
+
+            ),
+
+           Light(
+                position = [11.683742,2.8594892, -5.5],
+                color = (1, 1, 1), strength= 3
+
+            ),
+
            
+           Light(
+                position = [17.235008, -15.391624, -5.5],
+                color = (1, 1, 1), strength= 3
+
+            ),
+
+           Light(
+                position = [-0.88856035, -10.726019, -5.5],
+                color = (1, 1, 1), strength= 3
+
+            ),
+
            
+
+           Light(
+                position = [-15.060681,  -8.165347, -5.5],
+                color = (1, 1, 1), strength= 3
+
+            ),
+
+           Light(
+                position = [-3.3407845,  8.536253, -5.5],
+                color = (1, 1, 1), strength= 3
+
+            ),
+
+           Light(
+                position = [-12.453144,  16.426233, -5.5],
+                color = (1, 1, 1), strength= 3
+
+            ),
+
         ]
 
         
@@ -880,7 +985,9 @@ class Scene:
         self.player = Player(
             position = [1,1,-5.5]
         )
-        self.enemytarget2 = boobj[0].position
+        self.enemytarget2 = [3.8,-9.6,-5.8]
+        for obj in bacteriamanobject:
+            obj.position = (enemyleveltwopartols()[0])[0]
     
     def boxCollider(self, z1, z2, x1, x2, y1, y2):
         global beforePosx
@@ -921,7 +1028,7 @@ class Scene:
             levelonebjects.remove(levelonebjects[len(levelonebjects)-1])
         if maplevel == 2:
             leveltwobjects.remove(leveltwobjects[len(leveltwobjects)-1])
-        time.sleep(0.1)
+        time.sleep(0.15)
         
     def groundCollider(self, z1, z2, x1, x2, y1, y2):
         global beforePosx
@@ -948,7 +1055,13 @@ class Scene:
              maplevel += 1
              GotKey = False
              if maplevel == 1:
-                 self.player.position = [-6, 12, -6.5]
+                 self.player.position = [-11, 13, -6.5]
+             if maplevel == 2:
+                 self.player.position = [-9, -24, -6.5]
+                 for obj in boobj:
+            
+                     obj.position = [3.8,0,-5.8]
+                     obj.position = [3.8,0,-5.8]
     def normalizevector(self, vec):
          length = math.sqrt(vec[0]**2 + vec[1]**2 + vec[2]**2)
          if length == 0:
@@ -977,6 +1090,8 @@ class Scene:
               indexpatrolpos = 0
               for obj in bacteriamanobject:
                    obj.position = enemyleveltwopartols()[indexpatrol][indexpatrolpos]
+
+         self.enemytarget = enemyleveltwopartols()[indexpatrol][indexpatrolpos]
     def moveenemy(self):
         global DeltaTime
         if self.distance(self.enemytarget,bacteriamanobject[0].position ) > 0.5 and indexpatrolpos == 0:
@@ -994,11 +1109,11 @@ class Scene:
         for obj in bacteriamanobject:
              obj.eulers[2] = angle
 
-        EnemySpeed = 2.5
+        EnemySpeed = 2
         targetpos = self.normalizevector(targetpos)
         for obj in bacteriamanobject:
-             obj.position[0] += targetpos[0] * DeltaTime * EnemySpeed
-             obj.position[1] += targetpos[1] * DeltaTime * EnemySpeed
+             obj.position[0] += targetpos[0] * (1/60) * EnemySpeed
+             obj.position[1] += targetpos[1] * (1/60) * EnemySpeed
              
     def moveenemy2(self):
         global DeltaTime
@@ -1013,13 +1128,26 @@ class Scene:
              obj.eulers[2] = angle
         
         targetpos2 = self.normalizevector(targetpos2)
-        EnemySpeed2 = 2 
+        EnemySpeed2 = 1.356
+        desiredPos = [targetpos2[0] * (1/60) * EnemySpeed2 + boobj[0].position[0],targetpos2[1] * (1/60) * EnemySpeed2 + boobj[0].position[1], -5]
         for obj in boobj:
             
-            obj.position[0] += targetpos2[0] * DeltaTime * EnemySpeed2
-            obj.position[1] += targetpos2[1] * DeltaTime * EnemySpeed2
+            obj.position = desiredPos
+            obj.position = desiredPos
 
-    
+    def Jumpscare(self):
+        #Reset Scene
+        global maplevel
+        if maplevel == 1:
+            self.player.position =[-11, 12, -6.5]
+            for obj in bacteriamanobject:      
+                obj.position = [-6 , 16.5, -6.5]
+        if maplevel == 2:
+            self.player.position = [-9, -24, -6.5]
+            for obj in boobj:
+            
+                obj.position = [3.8,0,-5.8]
+                obj.position = [3.8,0,-5.8]
         
     def update(self, rate):
         global beforekeys,boobj, GotKey
@@ -1054,9 +1182,10 @@ class Scene:
                          Scene.groundCollider(self, 1, 3, 8.5, 6.7, -7, -6),
                          #door!
                          Scene.boxTrigger(self, -3, -1, -2.65, -6.7, -7, -6, self.CheckDoor),
-                         Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5)]
+                         Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5),]
+            
         if maplevel ==1:
-            mapcolliders = [Scene.boxTrigger(self, 0.8, 1.5, 1, -0.65, -7, 10,self.PickupKey),
+            mapcolliders = [
                      Scene.boxCollider(self, 0.85, 3, 5.6, -1.65, -7, 10),
                      Scene.boxCollider(self,-4.25, -3, 9.55,-4.6, -7, 10),
                      Scene.boxCollider(self, -3.6, 3.6, 9.54, 8.5, -7, 10),
@@ -1071,8 +1200,10 @@ class Scene:
                      Scene.boxTrigger(self, 10.5, 12.45, 4.8, 4.2, -10, 7.5, self.CheckDoor),
                      Scene.boxCollider(self, 10.5, 12.45, 4.8, 4.2, -10, 7.5)
                      ]
+            mapcolliders.append(Scene.boxTrigger(self, bacteriamanobject[0].position[0]+-1,bacteriamanobject[0].position[0]+1, bacteriamanobject[0].position[1]+1, bacteriamanobject[0].position[1]+-1, -10, -6.5, self.Jumpscare))
+
             if not GotKey:
-                mapcolliders.append(Scene.boxTrigger(self, 1.9, 2.25, 24, 22, -10, -6.5, self.PickupKey))
+                mapcolliders.append(Scene.boxTrigger(self, 0.8, 1.5, 1, -0.65, -7, 10,self.PickupKey))
         if maplevel == 2:
             
             mapcolliders = [
@@ -1101,6 +1232,8 @@ class Scene:
                          Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5),
                          Scene.boxTrigger(self,  -13.4, -12.5, 10, 8, -7, 0, self.CheckDoor),
                          Scene.boxCollider(self, -13.4, -12.5, 10, 8, -7, 0)]
+            mapcolliders.append(Scene.boxTrigger(self, boobj[0].position[0]+-1,boobj[0].position[0]+1, boobj[0].position[1]+1, boobj[0].position[1]+-1, -10, -6.5, self.Jumpscare))
+
             if not GotKey:
                     mapcolliders.append(Scene.boxTrigger(self, 1.9, 2.25, 24, 22, -10, -6.5, self.PickupKey))
         
@@ -1121,10 +1254,10 @@ class Scene:
              
              self.curspeed = self.runspeed
         if keys[pg.K_LCTRL]:
-            print(self.distance(self.enemytarget,bacteriamanobject[0].position ))
+            print(bacteriamanobject[0].position)
         beforekeys = pg.key.get_pressed()
         if not self.is_grounded:
-             self.velocityY += -self.gravity * DeltaTime/100
+             self.velocityY += -self.gravity * (1/60)/100
         self.player.position[2] += self.velocityY
         if not collide:
              beforePosz = self.player.position[0]
@@ -1291,8 +1424,8 @@ class App:
                 directionModifier = 315
             
             dPos = [
-                DeltaTime * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
-                DeltaTime * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
+                (1/60) * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
+                (1/60) * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
                 
                 0
             ]
