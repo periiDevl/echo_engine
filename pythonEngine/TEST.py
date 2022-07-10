@@ -567,7 +567,79 @@ class Scene:
                 tex ='monkeu'
                 ,
                 position = [0, 7, -7.5],
-                eulers = [0,0,0]
+                eulers = [0,0,0],
+
+                
+            ),
+
+            SimpleComponent(
+                mesh = 'monkey',
+                tex ='monkeu'
+                ,
+                position = [3, 5, -7.5],
+                eulers = [0,0,0],
+
+                
+            ),
+
+            SimpleComponent(
+                mesh = 'monkey',
+                tex ='monkeu'
+                ,
+                position = [3, 9, -7.5],
+                eulers = [0,0,0],
+
+                
+            ),
+
+            SimpleComponent(
+                mesh = 'monkey',
+                tex ='monkeu'
+                ,
+                position = [5, 8, -7.5],
+                eulers = [0,0,0],
+
+                
+            ),
+
+            SimpleComponent(
+                mesh = 'monkey',
+                tex ='monkeu'
+                ,
+                position = [9, 5, -7.5],
+                eulers = [0,0,0],
+
+                
+            ),
+
+            SimpleComponent(
+                mesh = 'monkey',
+                tex ='monkeu'
+                ,
+                position = [5, 2, -7.5],
+                eulers = [0,0,0],
+
+                
+            ),
+
+            SimpleComponent(
+                mesh = 'monkey',
+                tex ='monkeu'
+                ,
+                position = [10, 10, -7.5],
+                eulers = [0,0,0],
+
+                
+            ),
+
+            SimpleComponent(
+                mesh = 'monkey',
+                tex ='monkeu'
+                ,
+                position = [9, 5, -7.5],
+                eulers = [0,0,0],
+
+                
             ),
 
             SimpleComponent(
