@@ -304,6 +304,29 @@ class RenderPassTexturedLit3D:
                 nonscriptname.tex.use()
                 glBindVertexArray(nonscriptname.mesh.vao)
                 glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
+        def createL3():
+
+            for nonscriptname in levelthreebjects:
+
+                
+                
+                model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
+                model_transform = pyrr.matrix44.multiply(
+                    m1=model_transform, 
+                    m2=pyrr.matrix44.create_from_eulers(
+                        eulers=np.radians(nonscriptname.eulers), dtype=np.float32
+                    )
+                )
+                model_transform = pyrr.matrix44.multiply(
+                    m1=model_transform, 
+                    m2=pyrr.matrix44.create_from_translation(
+                        vec=np.array(nonscriptname.position),dtype=np.float32
+                    )
+                )
+                glUniformMatrix4fv(self.modelMatrixLocation,1,GL_FALSE,model_transform)
+                nonscriptname.tex.use()
+                glBindVertexArray(nonscriptname.mesh.vao)
+                glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
 
                 
 
@@ -435,6 +458,9 @@ class GraphicsEngine:
 
         self.levtwo = Mesh("models/level2W.obj", 3.25, 4)
         self.levtwoB = Mesh("models/level2B.obj", 3.25, 4)
+
+        self.levthreeW = Mesh("models/level3W.obj", 3.25, 4)
+        self.levthreeB = Mesh("models/level3B.obj", 3.25, 4)
 
         self.keymesh = Mesh("models/key.obj", 0.25, 4)
         
@@ -661,6 +687,13 @@ class GraphicsEngine:
             boobj[3],
             key2
             ]
+        global levelthreeobjects
+        levelthreeobjects = [SimpleComponent(mesh = self.floor, tex = self.mosstexture ,position = [0,0,-9], eulers = [90,0,0]),
+            SimpleComponent(mesh = self.ceilingFloor, tex = self.ceilingg ,position = [0,0,-2.5], eulers = [90,0,0]),
+            
+            SimpleComponent(mesh = self.levthreeW, tex = self.doorpart2wTex ,position = [0,-3.4,-3.5], eulers = [90,0,90]),
+            SimpleComponent(mesh = self.levthreeB, tex = self.wall_lev_two_texture ,position = [0,-3.4,-3.5], eulers = [90,0,90]),
+]
 
         
         
