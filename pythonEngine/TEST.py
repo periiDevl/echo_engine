@@ -413,11 +413,11 @@ class GraphicsEngine:
         self.poster = Mesh("models/posterObj.obj", 0.3, 2.75)
         self.table = Mesh("models/table.obj", 0.8, 4)
 
-        self.bacteriaman = Mesh("models/bacteria man.obj", .3, 1)
-        self.boo_body = Mesh("models/boo_body.obj", .3, 1)
-        self.boo_eye = Mesh("models/boo_eyes.obj", .3, 1)
-        self.boo_eye_pup = Mesh("models/boo_eyes_pupels.obj", .3, 1)
-        self.boo_bars = Mesh("models/boo_bars.obj", .3, 1)
+        self.bacteriaman = Mesh("models/bacteria man.obj", .8, 1)
+        self.boo_body = Mesh("models/boo_body.obj", .8, 1)
+        self.boo_eye = Mesh("models/boo_eyes.obj", .8, 1)
+        self.boo_eye_pup = Mesh("models/boo_eyes_pupels.obj", .8, 1)
+        self.boo_bars = Mesh("models/boo_bars.obj", .8, 1)
         self.doorpart1 = Mesh("models/doorpart1.obj", 0.5, 4)
         self.doorpart2 = Mesh("models/doorpart2.obj", 0.5, 4)
         self.doorpart3 = Mesh("models/doorpart3.obj", 0.5, 4)
@@ -509,10 +509,6 @@ class GraphicsEngine:
             SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, -1,-5.8], eulers = [90,0,0]),
             SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,-1,-5.8], eulers = [90,0,0]),
                                     
-        boobj[0],
-        boobj[1],
-        boobj[2],
-        boobj[3]
         ]
         global bacteriamanobject
         bacteriamanobject = [SimpleComponent(mesh = self.bacteriaman, tex = self.bacteriamantexture ,position = [0,-12.4,-6.8], eulers = [270,0,90]),
@@ -648,7 +644,10 @@ class GraphicsEngine:
             
             SimpleComponent(mesh = self.levtwo, tex = self.doorpart2wTex ,position = [0,-3.4,-3.5], eulers = [90,0,90]),
             SimpleComponent(mesh = self.levtwoB, tex = self.wall_lev_two_texture ,position = [0,-3.4,-3.5], eulers = [90,0,90]),
-
+            boobj[0],
+            boobj[1],
+            boobj[2],
+            boobj[3],
             key2
             ]
 
@@ -719,11 +718,44 @@ class GraphicsEngine:
         pg.quit()
 
 global boobj 
-global randomenemypositions
-randomenemypositions = [[1, 1, -6.5], [-10, -15, -6.5],[6, 6, -6.5]]
+global EnemyL2pos
+EnemyL2pos = [[-6 , 16.5, -6.5], [-16, 2, -6.5], [-16, -6.5, -6.5],
+                       [5.5, -9.5, -6.5], [16,-6.5,-6.5],[16,2,-6.5],
+                       [16,12,-6.5], [5.5,16.5,-6.5], [5.5,12,-6.5],
+                       [-6,12,-6.5], [-6,2,-6.5], [-6,-6.5,-6.5],
+                       [-1,-6.5,-6.5], [5.5, -6.5, -6.5], [16, -6.5, -6.5],
+                       [-1,7,-6.5], [16, 7, -6.5]]
+def EnemyL2pos():
+    return [[-6 , 16.5, -6.5], [-16, 2, -6.5], [-16, -6.5, -6.5],
+                       [5.5, -9.5, -6.5], [16,-6.5,-6.5],[16,2,-6.5],
+                       [16,12,-6.5], [5.5,16.5,-6.5], [5.5,12,-6.5],
+                       [-6,12,-6.5], [-6,2,-6.5], [-6,-6.5,-6.5],
+                       [-1,-6.5,-6.5], [5.5, -6.5, -6.5], [16, -6.5, -6.5],
+                       [-1,7,-6.5], [16, 7, -6.5]]
+global enemyleveltwopartols
+enemyleveltwopartols = [
+                        [EnemyL2pos()[2-1], EnemyL2pos()[11-1], EnemyL2pos()[12-1], EnemyL2pos()[5-1]],
+                        [EnemyL2pos()[4-1], EnemyL2pos()[9-1], EnemyL2pos()[10-1],EnemyL2pos()[12-1],EnemyL2pos()[3-1]],
+                        [EnemyL2pos()[8-1], EnemyL2pos()[14-1], EnemyL2pos()[12-1],EnemyL2pos()[1-1]],
+                        [EnemyL2pos()[5-1], EnemyL2pos()[12-1], EnemyL2pos()[10-1], EnemyL2pos()[9-1],EnemyL2pos()[15-1],EnemyL2pos()[6-1]],
+                        [EnemyL2pos()[7-1], EnemyL2pos()[9-1], EnemyL2pos()[14-1],EnemyL2pos()[12-1],EnemyL2pos()[1-1]]]
+def enemyleveltwopartols():
+    return [
+                        [EnemyL2pos()[2-1], EnemyL2pos()[11-1], EnemyL2pos()[12-1], EnemyL2pos()[5-1]],
+                        [EnemyL2pos()[4-1], EnemyL2pos()[9-1], EnemyL2pos()[10-1],EnemyL2pos()[12-1],EnemyL2pos()[3-1]],
+                        [EnemyL2pos()[8-1], EnemyL2pos()[14-1], EnemyL2pos()[12-1],EnemyL2pos()[1-1]],
+                        [EnemyL2pos()[5-1], EnemyL2pos()[12-1], EnemyL2pos()[10-1], EnemyL2pos()[9-1],EnemyL2pos()[15-1],EnemyL2pos()[6-1]],
+                        [EnemyL2pos()[7-1], EnemyL2pos()[9-1], EnemyL2pos()[14-1],EnemyL2pos()[12-1],EnemyL2pos()[1-1]]]
+
+global indexpatrol,indexpatrolpos
+indexpatrol = 0
+indexpatrolpos = 0
 class Scene:
     global beforekeys,collide
     global speed, runspeed
+
+    global indexpatrol,indexpatrolpos
+    enemytarget = (enemyleveltwopartols()[indexpatrol])[indexpatrolpos]
     
     beforekeys = []
     velocityY = 0.01
@@ -886,9 +918,10 @@ class Scene:
         global GotKey, maplevel,leveltwobjects
         GotKey = True
         if maplevel == 1:
-            levelonebjects.remove(leveltwobjects[len(leveltwobjects)-1])
+            levelonebjects.remove(levelonebjects[len(levelonebjects)-1])
         if maplevel == 2:
             leveltwobjects.remove(leveltwobjects[len(leveltwobjects)-1])
+        time.sleep(0.1)
         
     def groundCollider(self, z1, z2, x1, x2, y1, y2):
         global beforePosx
@@ -918,7 +951,8 @@ class Scene:
                  self.player.position = [-6, 12, -6.5]
     def normalizevector(self, vec):
          length = math.sqrt(vec[0]**2 + vec[1]**2 + vec[2]**2)
-
+         if length == 0:
+              length = .01
          return [vec[0]/length,vec[1]/length,vec[2]/length]
     def Abs(self, number):
          if number < 0:
@@ -930,12 +964,42 @@ class Scene:
     def randomtarget(self):
          global boobj, randomenemypositions
          
-         self.enemytarget2 = randomenemypositions[random.randrange(0, len(randomenemypositions))]
+         self.enemytarget2 = self.player.position
          
          return self.player.position
     def distance(self, v1, v2):
          return math.sqrt(self.Abs(v2[0] - v1[0]) + self.Abs(v2[1] - v1[1]))
+    def patrolpos(self):
+         global bacteriamanobject, indexpatrol, indexpatrolpos
+         indexpatrolpos += 1
+         if indexpatrolpos >= len(enemyleveltwopartols()[indexpatrol]):
+              indexpatrol = random.randrange(0, len(enemyleveltwopartols()))
+              indexpatrolpos = 0
+              for obj in bacteriamanobject:
+                   obj.position = enemyleveltwopartols()[indexpatrol][indexpatrolpos]
+    def moveenemy(self):
+        global DeltaTime
+        if self.distance(self.enemytarget,bacteriamanobject[0].position ) > 0.5 and indexpatrolpos == 0:
+             for obj in bacteriamanobject:
+                   obj.position = enemyleveltwopartols()[indexpatrol][indexpatrolpos]           
+        if self.distance(self.enemytarget,bacteriamanobject[0].position ) < 0.5:
+             self.patrolpos()
 
+        targetpos = [self.enemytarget[0] - bacteriamanobject[0].position[0],
+                     self.enemytarget[1] - bacteriamanobject[0].position[1],
+                     0]
+
+        direction = targetpos
+        angle = math.atan2(direction[0], direction[1]) * 57.29578 + -90
+        for obj in bacteriamanobject:
+             obj.eulers[2] = angle
+
+        EnemySpeed = 2.5
+        targetpos = self.normalizevector(targetpos)
+        for obj in bacteriamanobject:
+             obj.position[0] += targetpos[0] * DeltaTime * EnemySpeed
+             obj.position[1] += targetpos[1] * DeltaTime * EnemySpeed
+             
     def moveenemy2(self):
         global DeltaTime
         if self.distance(self.enemytarget2, boobj[0].position) < 0.07:
@@ -943,8 +1007,13 @@ class Scene:
         targetpos2 = [self.enemytarget2[0] - boobj[0].position[0],
                      self.enemytarget2[1] - boobj[0].position[1],
                      self.enemytarget2[2] - boobj[0].position[2]]
+        direction = targetpos2
+        angle = math.atan2(direction[0], direction[1]) * 57.29578 + -90
+        for obj in boobj:
+             obj.eulers[2] = angle
+        
         targetpos2 = self.normalizevector(targetpos2)
-        EnemySpeed2 = 1 
+        EnemySpeed2 = 2 
         for obj in boobj:
             
             obj.position[0] += targetpos2[0] * DeltaTime * EnemySpeed2
@@ -969,8 +1038,9 @@ class Scene:
         mapcolliders = [Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5)]
 
         #move bacteriaman
-        #self.moveenemy1()
-        if maplevel > 1:
+        if maplevel == 1:
+            self.moveenemy()
+        if maplevel == 2:
             self.moveenemy2()
         
         
@@ -986,7 +1056,8 @@ class Scene:
                          Scene.boxTrigger(self, -3, -1, -2.65, -6.7, -7, -6, self.CheckDoor),
                          Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5)]
         if maplevel ==1:
-            mapcolliders = [Scene.boxCollider(self, 0.8, 3, 5.6, -1.65, -7, 10),
+            mapcolliders = [Scene.boxTrigger(self, 0.8, 1.5, 1, -0.65, -7, 10,self.PickupKey),
+                     Scene.boxCollider(self, 0.85, 3, 5.6, -1.65, -7, 10),
                      Scene.boxCollider(self,-4.25, -3, 9.55,-4.6, -7, 10),
                      Scene.boxCollider(self, -3.6, 3.6, 9.54, 8.5, -7, 10),
                      Scene.boxCollider(self, -15.15, -14, 15.5, -8.45, -7, 10),
@@ -1049,7 +1120,8 @@ class Scene:
              print(self.player.position)
              
              self.curspeed = self.runspeed
-             
+        if keys[pg.K_LCTRL]:
+            print(self.distance(self.enemytarget,bacteriamanobject[0].position ))
         beforekeys = pg.key.get_pressed()
         if not self.is_grounded:
              self.velocityY += -self.gravity * DeltaTime/100
@@ -1112,7 +1184,7 @@ class App:
         
         backroundSounds = pg.mixer.Sound('sounds/LightBuzz.mp3')
         backroundSounds.play(-1)
-        backroundSounds.set_volume(0.008)
+        backroundSounds.set_volume(0.1)
         running = True
         self.scene.beforekeys = pg.key.get_pressed()
         while (running):
