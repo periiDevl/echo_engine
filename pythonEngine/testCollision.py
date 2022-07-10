@@ -21,7 +21,8 @@ global DeltaTime, FPS
 DeltaTime = 1 / 60
 FPS = 60
 
-
+global G_is
+G_is = True
 GotKey = False
 
 class Mesh:
@@ -1053,8 +1054,15 @@ class Scene:
                 return True
             else:
                 return False
-
+    
+    
+    
+    
     def PickupKey(self):
+        pg.mixer.init()
+        pickupkeySound = pg.mixer.Sound('sounds/pickupkey.wav')
+        pickupkeySound.play()
+        pickupkeySound.set_volume(0.1)
         global GotKey, maplevel,leveltwobjects
         GotKey = True
         if maplevel == 1:
@@ -1185,6 +1193,7 @@ class Scene:
     def update(self, rate):
         global beforekeys,boobj, GotKey
         global beforePosx, beforePosz,beforePosy
+        
         self.gravity = 5
         self.jumpForce = .03
         self.speed = 2.35
@@ -1193,6 +1202,8 @@ class Scene:
         self.is_grounded = False
         global maplevel
         global mapcolliders
+        
+        G_is = self.is_grounded
 
         
         
@@ -1281,6 +1292,12 @@ class Scene:
         
         if beforekeys != None:
             if keys[pg.K_SPACE] and not beforekeys[pg.K_SPACE] and self.is_grounded:
+            
+            
+        
+                jumpSound = pg.mixer.Sound('sounds/startjump.wav')
+                jumpSound.set_volume(0.3)
+                jumpSound.play(1)
                 self.velocityY = self.jumpForce
         if keys[pg.K_LSHIFT]:
              print(self.player.position)
@@ -1348,9 +1365,9 @@ class App:
         walkSounds = pg.mixer.Sound('sounds/walkingOnWoodSound.mp3')
         walkSoundd = pg.mixer.Sound('sounds/walkingOnWoodSound.mp3')
         
-        backroundSounds = pg.mixer.Sound('sounds/LightBuzz.mp3')
+        backroundSounds = pg.mixer.Sound('sounds/backroundSound.wav')
         backroundSounds.play(-1)
-        backroundSounds.set_volume(0.1)
+        backroundSounds.set_volume(0.3)
         running = True
         self.scene.beforekeys = pg.key.get_pressed()
         while (running):
@@ -1387,25 +1404,26 @@ class App:
 
                     
 
-                
+            global G_is
+        
             pressed_keys = pg.key.get_pressed()
-            if not pressed_keys[pg.K_w]:
+            if not pressed_keys[pg.K_w] or G_is == False:
                         
                 walkSoundw.stop()
 
                 walkSoundw.set_volume(0.025)
 
-            if not pressed_keys[pg.K_a]:
+            if not pressed_keys[pg.K_a] or G_is == False:
                         
                 walkSounda.stop()
 
                 walkSounda.set_volume(0.025)
-            if not pressed_keys[pg.K_s]:
+            if not pressed_keys[pg.K_s] or G_is == False:
                         
                 walkSounds.stop()
 
                 walkSounds.set_volume(0.025)
-            if not pressed_keys[pg.K_d]:
+            if not pressed_keys[pg.K_d] or G_is == False:
                         
                 walkSoundd.stop()
 
