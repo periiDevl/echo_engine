@@ -17,8 +17,12 @@ global maplevel
 
 maplevel = 0
 
+global DeltaTime, FPS
+DeltaTime = 1 / 60
+FPS = 60
 
 
+GotKey = False
 
 class Mesh:
 
@@ -229,9 +233,9 @@ class RenderPassTexturedLit3D:
         
         global leveloneobjects
         global leveltwobjects
-        def createLO():
+        def createL0():
             global maplevel
-            for nonscriptname in leveloneobjects:
+            for nonscriptname in levelzeroobjects:
 
                 
                 
@@ -253,7 +257,31 @@ class RenderPassTexturedLit3D:
                 glBindVertexArray(nonscriptname.mesh.vao)
                 glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
 
-        def createLT():
+        def createL1():
+
+            for nonscriptname in levelonebjects:
+
+                
+                
+                model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
+                model_transform = pyrr.matrix44.multiply(
+                    m1=model_transform, 
+                    m2=pyrr.matrix44.create_from_eulers(
+                        eulers=np.radians(nonscriptname.eulers), dtype=np.float32
+                    )
+                )
+                model_transform = pyrr.matrix44.multiply(
+                    m1=model_transform, 
+                    m2=pyrr.matrix44.create_from_translation(
+                        vec=np.array(nonscriptname.position),dtype=np.float32
+                    )
+                )
+                glUniformMatrix4fv(self.modelMatrixLocation,1,GL_FALSE,model_transform)
+                nonscriptname.tex.use()
+                glBindVertexArray(nonscriptname.mesh.vao)
+                glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
+
+        def createL2():
 
             for nonscriptname in leveltwobjects:
 
@@ -303,9 +331,11 @@ class RenderPassTexturedLit3D:
         
         
         if maplevel == 0:
-            createLO()
+            createL0()
         elif maplevel == 1:
-            createLT()
+            createL1()
+        elif maplevel == 2:
+            createL2()
         
             for fow in scene.fows:
 
@@ -394,7 +424,13 @@ class GraphicsEngine:
 
         self.levtwo = Mesh("models/level2W.obj", 3.25, 4)
         self.levtwoB = Mesh("models/level2B.obj", 3.25, 4)
+
+        self.keymesh = Mesh("models/key.obj", 0.25, 4)
         
+        self.bacteriaman = Mesh("models/ghostbody.obj", .25, .6)
+        self.bacteriaeyes = Mesh("models/ghosteyes.obj", .25, .6)
+        self.bacteriacloth = Mesh("models/ghostcloth.obj", .25, .6)
+        self.bacteriahead = Mesh("models/ghosthead.obj", .25, .6)
         
         #TEXTURES
         self.walltexture = Material("gfx/Leather035C_2K_Color.jpg")
@@ -417,6 +453,12 @@ class GraphicsEngine:
 
         self.wall_lev_two_texture = Material("gfx/woodlevtwo.jpg")
         self.mosstexture = Material("gfx/moss.jpg")
+
+        self.bacteriamantexture = Material("gfx/Ghost texture.png")
+        self.bacteriaeyetexture = Material("gfx/Ghost eyes.png")
+        self.bacteriaclothtexture = Material("gfx/ghost cloth.png")
+        
+        self.keyTex = Material("gfx/key texture.png")
         
         #BILLBOARDS
         self.fow_billboard = BillBoard(w = 1, h = 1)
@@ -434,8 +476,8 @@ class GraphicsEngine:
         
         global maplevel
         
-        global leveloneobjects
-        leveloneobjects = [SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [3.7,0,-5.8], eulers = [90,0,0]),
+        global levelzeroobjects
+        levelzeroobjects = [SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [3.7,0,-5.8], eulers = [90,0,0]),
             SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-3.7,0,-5.8], eulers = [90,0,0]),
             SimpleComponent(mesh = self.floor, tex = self.floortexture ,position = [0,0,-9], eulers = [90,0,0]),
             SimpleComponent(mesh = self.ceilingFloor, tex = self.ceilingg ,position = [0,0,-2.5], eulers = [90,0,0]),
@@ -472,14 +514,142 @@ class GraphicsEngine:
         boobj[2],
         boobj[3]
         ]
+        global bacteriamanobject
+        bacteriamanobject = [SimpleComponent(mesh = self.bacteriaman, tex = self.bacteriamantexture ,position = [0,-12.4,-6.8], eulers = [270,0,90]),
+                             SimpleComponent(mesh = self.bacteriaeyes, tex = self.bacteriaeyetexture ,position = [0,-12.4,-6.8], eulers = [270,0,90]),
+                             SimpleComponent(mesh = self.bacteriacloth, tex = self.bacteriaclothtexture ,position = [0,-12.4,-6.8], eulers = [270,0,90]),
+                             SimpleComponent(mesh = self.bacteriahead, tex = self.bacteriamantexture ,position = [0,-12.4,-6.8], eulers = [270,0,90])]
+        
+        global levelonebjects
+        key1 = SimpleComponent(mesh = self.keymesh, tex = self.keyTex ,position = [1.05,0,-6.5], eulers = [90,0,90])
+        levelonebjects = [
+            SimpleComponent(mesh = self.floor, tex = self.floortexture ,position = [0,0,-9], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.ceilingFloor, tex = self.ceilingg ,position = [0,0,-2.5], eulers = [90,0,0])
+        ,
+        # FIRST ROOM
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-3.7, 5.95,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-3.7,5.9,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-3.7,5.9-6.9,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-3.7,5.9-6.9,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [1.5, 2,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [1.5,2,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [2, 2,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [2,2,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [2.5, 2,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [2.5,2,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, 9,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,9,-5.8], eulers = [90,0,90])
+        ,
+        # SECOND ROOM
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-11, 5,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-11,5,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-11, -1,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-11,-1,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-14.5, 2,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-14.5,2,-5.8], eulers = [90,0,0])
+        ,
+        # THIRD ROOM
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [11, 5,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [11,5,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [11, -1,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [11,-1,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [14.5, 2,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [14.5,2,-5.8], eulers = [90,0,0])
+        ,
+        # AROUND ROOMS
 
+        ### wall 1
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [11.5, 15,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [11.5,15,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [4.6, 15,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [4.6,15,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-2.3, 15,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-2.3,15,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-2.3-6.9, 15,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-2.3-6.9,15,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-2.3-13.8, 15,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-2.3-13.8,15,-5.8], eulers = [90,0,90])
+        ,
+        ### wall 2
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [14.5, 12.9+2.85,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [14.5,12.9+2.85,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [14.5, 6+2.85,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [14.5,6+2.85,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [14.5, -4.9,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [14.5,-4.9,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [14.5, 6+2.85,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [14.5,6+2.85,-5.8], eulers = [90,0,0])
+        ,
+        ### wall 3
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [11.5, -8.2,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [11.5,-8.2,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [4.6, -8.2,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [4.6,-8.2,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-2.3, -8.2,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-2.3,-8.2,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-2.3-6.9, -8.2,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-2.3-6.9,-8.2,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-2.3-13.8, -8.2,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-2.3-13.8,-8.2,-5.8], eulers = [90,0,90])
+        ,
+        
+        ### wall 4
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-14.5, 12.9+2.85,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-14.5,12.9+2.85,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-14.5, 6+2.85,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-14.5,6+2.85,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-14.5, -4.9,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-14.5,-4.9,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-14.5, 6+2.85,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-14.5,6+2.85,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.doorpart1, tex = self.floorbtexture ,position = [11.45,4.5,-6.62], eulers = [90,0,-90]),
+        SimpleComponent(mesh = self.doorpart2, tex = self.doorpart2Tex ,position = [11.45,4.5,-6.62], eulers = [90,0,-90]),
+        SimpleComponent(mesh = self.doorpart3, tex = self.doorpart3Tex ,position = [11.45,4.5,-6.62], eulers = [90,0,-90]),
+        SimpleComponent(mesh = self.doorpart2, tex = self.doorpart2wTex ,position = [11.45,4.5,-6.62], eulers = [90,0,-90])
+        ,
+        # ENEMY
+        bacteriamanobject[0],bacteriamanobject[1],bacteriamanobject[2],bacteriamanobject[3],
+        key1
+        ]
         global leveltwobjects
+        key2 = SimpleComponent(mesh = self.keymesh, tex = self.keyTex ,position = [1.75,23,-6.5], eulers = [90,0,90])
         leveltwobjects = [
+            SimpleComponent(mesh = self.doorpart1, tex = self.floorbtexture ,position = [-13,9,-6.62], eulers = [90,0,180]),
+            SimpleComponent(mesh = self.doorpart2, tex = self.doorpart2Tex ,position = [-13-.1,9+.1,-6.62], eulers = [90,0,180]),
+            SimpleComponent(mesh = self.doorpart3, tex = self.doorpart3Tex ,position = [-13,9,-6.62], eulers = [90,0,180]),
+            SimpleComponent(mesh = self.doorpart2, tex = self.doorpart2wTex ,position = [-13+.6,9+.1,-6.62], eulers = [90,0,180]),
+            
             SimpleComponent(mesh = self.floor, tex = self.mosstexture ,position = [0,0,-9], eulers = [90,0,0]),
             SimpleComponent(mesh = self.ceilingFloor, tex = self.ceilingg ,position = [0,0,-2.5], eulers = [90,0,0]),
             
             SimpleComponent(mesh = self.levtwo, tex = self.doorpart2wTex ,position = [0,-3.4,-3.5], eulers = [90,0,90]),
-            SimpleComponent(mesh = self.levtwoB, tex = self.wall_lev_two_texture ,position = [0,-3.4,-3.5], eulers = [90,0,90])
+            SimpleComponent(mesh = self.levtwoB, tex = self.wall_lev_two_texture ,position = [0,-3.4,-3.5], eulers = [90,0,90]),
+
+            key2
             ]
 
         
@@ -678,7 +848,7 @@ class Scene:
         self.player = Player(
             position = [1,1,-5.5]
         )
-        self.enemytarget = boobj[0].position
+        self.enemytarget2 = boobj[0].position
     
     def boxCollider(self, z1, z2, x1, x2, y1, y2):
         global beforePosx
@@ -698,24 +868,28 @@ class Scene:
              return True
         else:
              return False
-
-    def doorcolider(self, z1, z2, x1, x2, y1, y2):
+    def boxTrigger(self, z1, z2, x1, x2, y1, y2, event):
             global beforePosx
             global beforePosz
             global beforePosy
-            global maplevel
+
 
             # Check if inside the box at X-axis and Check if inside the box at Z-axis and Check if inside the box at Y-axis
             if self.player.position[1] < x1 and self.player.position[1] > x2 and self.player.position[0] > z1 and self.player.position[0] < z2 and self.player.position[2] > y1 and self.player.position[2] < y2:
-                 
-                maplevel = maplevel + 1
-                
+                event()
                 
                 return True
             else:
-                 return False
+                return False
 
-
+    def PickupKey(self):
+        global GotKey, maplevel,leveltwobjects
+        GotKey = True
+        if maplevel == 1:
+            levelonebjects.remove(leveltwobjects[len(leveltwobjects)-1])
+        if maplevel == 2:
+            leveltwobjects.remove(leveltwobjects[len(leveltwobjects)-1])
+        
     def groundCollider(self, z1, z2, x1, x2, y1, y2):
         global beforePosx
         global beforePosz
@@ -734,7 +908,14 @@ class Scene:
                 #Check if before collsiion x was in collider
              if beforePosx < x1 and beforePosx > x2 :
                 self.player.position[0] = beforePosz
-
+    def CheckDoor(self):
+         global GotKey, video,donevideo, running
+         global maplevel
+         if GotKey:
+             maplevel += 1
+             GotKey = False
+             if maplevel == 1:
+                 self.player.position = [-6, 12, -6.5]
     def normalizevector(self, vec):
          length = math.sqrt(vec[0]**2 + vec[1]**2 + vec[2]**2)
 
@@ -749,29 +930,34 @@ class Scene:
     def randomtarget(self):
          global boobj, randomenemypositions
          
-         self.enemytarget = randomenemypositions[random.randrange(0, len(randomenemypositions))]
+         self.enemytarget2 = randomenemypositions[random.randrange(0, len(randomenemypositions))]
          
          return self.player.position
-    def moveenemy(self):
-        if self.Abs(self.magnitude(self.enemytarget) - self.magnitude(boobj[0].position)) < 0.02:
-             self.enemytarget = self.randomtarget()
-        targetpos = [self.enemytarget[0] - boobj[0].position[0],
-                     self.enemytarget[1] - boobj[0].position[1],
-                     self.enemytarget[2] - boobj[0].position[2]]
-        targetpos = self.normalizevector(targetpos)
+    def distance(self, v1, v2):
+         return math.sqrt(self.Abs(v2[0] - v1[0]) + self.Abs(v2[1] - v1[1]))
+
+    def moveenemy2(self):
+        global DeltaTime
+        if self.distance(self.enemytarget2, boobj[0].position) < 0.07:
+             self.enemytarget2 = self.randomtarget()
+        targetpos2 = [self.enemytarget2[0] - boobj[0].position[0],
+                     self.enemytarget2[1] - boobj[0].position[1],
+                     self.enemytarget2[2] - boobj[0].position[2]]
+        targetpos2 = self.normalizevector(targetpos2)
+        EnemySpeed2 = 1 
         for obj in boobj:
             
-            obj.position[0] += targetpos[0]/35
-            obj.position[1] += targetpos[1]/35
+            obj.position[0] += targetpos2[0] * DeltaTime * EnemySpeed2
+            obj.position[1] += targetpos2[1] * DeltaTime * EnemySpeed2
 
     
         
     def update(self, rate):
-        global beforekeys,boobj
+        global beforekeys,boobj, GotKey
         global beforePosx, beforePosz,beforePosy
-        self.gravity = 1
-        self.jumpForce = .021
-        self.speed = 10
+        self.gravity = 5
+        self.jumpForce = .03
+        self.speed = 2.35
         self.runspeed = 7
         self.curspeed = self.speed
         self.is_grounded = False
@@ -783,10 +969,13 @@ class Scene:
         mapcolliders = [Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5)]
 
         #move bacteriaman
-        #self.moveenemy()
+        #self.moveenemy1()
+        if maplevel > 1:
+            self.moveenemy2()
         
         
         if maplevel == 0:
+            GotKey = True
             mapcolliders = [Scene.groundCollider(self, -4, 4, -2.8, -4.5, -7, 0),
                          Scene.groundCollider(self, -4, 4, 10.3, 8.4, -7, 0),
                          Scene.groundCollider(self, 3, 4.5, 11.3, -4, -7, 0),
@@ -794,9 +983,27 @@ class Scene:
                          Scene.groundCollider(self, -0.6, 0.5, 2.6, -11, -7, 0),
                          Scene.groundCollider(self, 1, 3, 8.5, 6.7, -7, -6),
                          #door!
-                         Scene.doorcolider(self, -3, -1, -2.65, -6.7, -7, -6),
+                         Scene.boxTrigger(self, -3, -1, -2.65, -6.7, -7, -6, self.CheckDoor),
                          Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5)]
-        if maplevel == 1:
+        if maplevel ==1:
+            mapcolliders = [Scene.boxCollider(self, 0.8, 3, 5.6, -1.65, -7, 10),
+                     Scene.boxCollider(self,-4.25, -3, 9.55,-4.6, -7, 10),
+                     Scene.boxCollider(self, -3.6, 3.6, 9.54, 8.5, -7, 10),
+                     Scene.boxCollider(self, -15.15, -14, 15.5, -8.45, -7, 10),
+                     Scene.boxCollider(self, -14.46, -7.4, -0.417, -1.564, -7, 10),
+                     Scene.boxCollider(self, -14.46, -7.4, -0.417+6, -1.564+6, -7, 10),
+                     Scene.boxCollider(self, 7.37, 14.57, -.498, -1.57, -7, 10),
+                     Scene.boxCollider(self, 7.37, 14.57, 5.52, 4.4, -7, 10),
+                     Scene.boxCollider(self, 13.84, 15,15.5, -8.45, -7, 10),
+                     Scene.boxCollider(self, -15.15, 15,15.5, 14.5, -7, 10),
+                     Scene.boxCollider(self, -15.15, 15,-7.7, -8.7, -7, 10),
+                     Scene.boxTrigger(self, 10.5, 12.45, 4.8, 4.2, -10, 7.5, self.CheckDoor),
+                     Scene.boxCollider(self, 10.5, 12.45, 4.8, 4.2, -10, 7.5)
+                     ]
+            if not GotKey:
+                mapcolliders.append(Scene.boxTrigger(self, 1.9, 2.25, 24, 22, -10, -6.5, self.PickupKey))
+        if maplevel == 2:
+            
             mapcolliders = [
                          
                          #cene.groundCollider(self, -0.6, 0.6 ,8.5, 6.6, -6.042, 0),
@@ -820,8 +1027,11 @@ class Scene:
                          Scene.groundCollider(self,-13.148,-11.88, -9.87, -16.38 , -7, 0),
                          
                          Scene.groundCollider(self,8.74, 15.29,0.364, -0.93 , -7, 0),
-                         Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5)]
-        
+                         Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5),
+                         Scene.boxTrigger(self,  -13.4, -12.5, 10, 8, -7, 0, self.CheckDoor),
+                         Scene.boxCollider(self, -13.4, -12.5, 10, 8, -7, 0)]
+            if not GotKey:
+                    mapcolliders.append(Scene.boxTrigger(self, 1.9, 2.25, 24, 22, -10, -6.5, self.PickupKey))
         
         collide = False
         for col in mapcolliders:
@@ -839,13 +1049,10 @@ class Scene:
              print(self.player.position)
              
              self.curspeed = self.runspeed
-        if keys[pg.K_t]:
-             bacteriamanobject.position[1] = self.player.position[1]
-
              
         beforekeys = pg.key.get_pressed()
         if not self.is_grounded:
-             self.velocityY += -self.gravity * (1/60) * (1/60)
+             self.velocityY += -self.gravity * DeltaTime/100
         self.player.position[2] += self.velocityY
         if not collide:
              beforePosz = self.player.position[0]
@@ -980,6 +1187,7 @@ class App:
         self.quit()
     
     def handleKeys(self):
+        global DeltaTime
 
         keys = pg.key.get_pressed()
         key = 0
@@ -1011,8 +1219,8 @@ class App:
                 directionModifier = 315
             
             dPos = [
-                (0.15 / 60) * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
-                (0.15 / 60) * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
+                DeltaTime * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
+                DeltaTime * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
                 
                 0
             ]
@@ -1032,16 +1240,18 @@ class App:
         pg.mouse.set_pos((self.screenWidth // 2,self.screenHeight // 2))
     
     def calculateFramerate(self):
-
+        global FPS, DeltaTime
         self.currentTime = pg.time.get_ticks()
         delta = self.currentTime - self.lastTime
         if (delta >= 1000):
-            framerate = max(1,int(120.0 * self.numFrames/delta))
+            framerate = max(1,int(1000.0 * self.numFrames/delta))
             pg.display.set_caption(f"Running at {framerate} fps.")
             self.lastTime = self.currentTime
             self.numFrames = -1
             self.frameTime = float(120.0 / max(1,framerate))
+            FPS = framerate
         self.numFrames += 1
+        DeltaTime = 1 / FPS
 
     def quit(self):
         
