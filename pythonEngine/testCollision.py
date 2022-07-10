@@ -1,5 +1,5 @@
 
-
+import time
 from tkinter import N
 from tkinter.tix import Tree
 from turtle import pos
@@ -14,10 +14,14 @@ import random
 from numba import *
 from functools import *
 
+from moviepy.editor import *
 
-
-
-
+global jumpscarevideo,donevideo
+donevideo = True
+jumpscarevideo = VideoFileClip("videos/Jumpscare Tall guy.mp4")
+global DeltaTime, FPS
+DeltaTime = 1 / 60
+FPS = 60
 class Mesh:
 
     
@@ -134,7 +138,6 @@ class SimpleComponent:
     
 
     
-    
 
 class Light:
 
@@ -184,14 +187,50 @@ beforePosz = 0
 global beforePosy
 beforePosy = 0
 
+global GotKey
+GotKey = False
 
 global bacteriamanobject 
-global randomenemypositions
-randomenemypositions = [[1, 1, -6.5], [-10, -15, -6.5],[6, 6, -6.5]]
+
+#All enemy positions that the enemy will target to
+
+global EnemyL2pos
+EnemyL2pos = [[-6 , 16.5, -6.5], [-16, 2, -6.5], [-16, -6.5, -6.5],
+                       [5.5, -9.5, -6.5], [16,-6.5,-6.5],[16,2,-6.5],
+                       [16,12,-6.5], [5.5,16.5,-6.5], [5.5,12,-6.5],
+                       [-6,12,-6.5], [-6,2,-6.5], [-6,-6.5,-6.5],
+                       [-1,-6.5,-6.5], [5.5, -6.5, -6.5], [16, -6.5, -6.5],
+                       [-1,7,-6.5], [16, 7, -6.5]]
+def EnemyL2pos():
+    return [[-6 , 16.5, -6.5], [-16, 2, -6.5], [-16, -6.5, -6.5],
+                       [5.5, -9.5, -6.5], [16,-6.5,-6.5],[16,2,-6.5],
+                       [16,12,-6.5], [5.5,16.5,-6.5], [5.5,12,-6.5],
+                       [-6,12,-6.5], [-6,2,-6.5], [-6,-6.5,-6.5],
+                       [-1,-6.5,-6.5], [5.5, -6.5, -6.5], [16, -6.5, -6.5],
+                       [-1,7,-6.5], [16, 7, -6.5]]
+global enemyleveltwopartols
+enemyleveltwopartols = [
+                        [EnemyL2pos()[2-1], EnemyL2pos()[11-1], EnemyL2pos()[12-1], EnemyL2pos()[5-1]],
+                        [EnemyL2pos()[4-1], EnemyL2pos()[9-1], EnemyL2pos()[10-1],EnemyL2pos()[12-1],EnemyL2pos()[3-1]],
+                        [EnemyL2pos()[8-1], EnemyL2pos()[14-1], EnemyL2pos()[12-1],EnemyL2pos()[1-1]],
+                        [EnemyL2pos()[5-1], EnemyL2pos()[12-1], EnemyL2pos()[10-1], EnemyL2pos()[9-1],EnemyL2pos()[15-1],EnemyL2pos()[6-1]],
+                        [EnemyL2pos()[7-1], EnemyL2pos()[9-1], EnemyL2pos()[14-1],EnemyL2pos()[12-1],EnemyL2pos()[1-1]]]
+def enemyleveltwopartols():
+    return [
+                        [EnemyL2pos()[2-1], EnemyL2pos()[11-1], EnemyL2pos()[12-1], EnemyL2pos()[5-1]],
+                        [EnemyL2pos()[4-1], EnemyL2pos()[9-1], EnemyL2pos()[10-1],EnemyL2pos()[12-1],EnemyL2pos()[3-1]],
+                        [EnemyL2pos()[8-1], EnemyL2pos()[14-1], EnemyL2pos()[12-1],EnemyL2pos()[1-1]],
+                        [EnemyL2pos()[5-1], EnemyL2pos()[12-1], EnemyL2pos()[10-1], EnemyL2pos()[9-1],EnemyL2pos()[15-1],EnemyL2pos()[6-1]],
+                        [EnemyL2pos()[7-1], EnemyL2pos()[9-1], EnemyL2pos()[14-1],EnemyL2pos()[12-1],EnemyL2pos()[1-1]]]
+
+global indexpatrol,indexpatrolpos
+indexpatrol = 0
+indexpatrolpos = 0
 class Scene:
     global beforekeys,collide
     global speed, runspeed
-    
+    global indexpatrol,indexpatrolpos
+    enemytarget = (enemyleveltwopartols()[indexpatrol])[indexpatrolpos]
     beforekeys = []
     velocityY = 0.01
     keys = []
@@ -215,10 +254,41 @@ class Scene:
                 
             ),
             Light(
-                position = [0, 13, -5.5],
+                position = [12, 12, -5.5],
+                color = (1, 1, 1), strength= 3
+                
+            ),
+           Light(
+                position = [0, 12, -5.5],
+                color = (1, 1, 1), strength= 3
+                
+            ),
+           Light(
+                position = [-8, 12, -5.5],
+                color = (1, 1, 1), strength= 3
+                
+            ),
+           Light(
+                position = [-10, 2, -5.5],
+                color = (1, 1, 1), strength= 3
+                
+            ),
+           Light(
+                position = [-10, -6, -5.5],
+                color = (1, 1, 1), strength= 3
+                
+            ),
+           Light(
+                position = [12, -6.5, -5.5],
+                color = (1, 1, 1), strength= 3
+                
+            ),
+           Light(
+                position = [12, 2.5, -5.5],
                 color = (1, 1, 1), strength= 3
                 
             )
+           
             
            
         ]
@@ -226,9 +296,9 @@ class Scene:
         
 
         self.player = Player(
-            position = [1,1,-5.5]
+            position = [-11,12,-5.5]
         )
-        self.enemytarget = bacteriamanobject.position
+        self.enemytarget = bacteriamanobject[0].position
         
     
     def boxCollider(self, z1, z2, x1, x2, y1, y2):
@@ -244,6 +314,25 @@ class Scene:
                 #Check if before collsiion x was in collider
              if beforePosx < x1 and beforePosx > x2 :
                 self.player.position[0] = beforePosz
+    
+              
+             return True
+        else:
+             return False
+    def PickupKey(self):
+         global GotKey, key
+         print(NonScriptableObjects)
+         NonScriptableObjects.remove(NonScriptableObjects[len(NonScriptableObjects)-1])
+         print(NonScriptableObjects)
+         GotKey = True
+    def boxTrigger(self, z1, z2, x1, x2, y1, y2, event):
+        global beforePosx
+        global beforePosz
+        global beforePosy
+
+        # Check if inside the box at X-axis and Check if inside the box at Z-axis and Check if inside the box at Y-axis
+        if self.player.position[1] < x1 and self.player.position[1] > x2 and self.player.position[0] > z1 and self.player.position[0] < z2 and self.player.position[2] > y1 and self.player.position[2] < y2:
+             event()
     
               
              return True
@@ -271,7 +360,8 @@ class Scene:
                 self.player.position[0] = beforePosz
     def normalizevector(self, vec):
          length = math.sqrt(vec[0]**2 + vec[1]**2 + vec[2]**2)
-
+         if length == 0:
+              length = .01
          return [vec[0]/length,vec[1]/length,vec[2]/length]
     def Abs(self, number):
          if number < 0:
@@ -280,48 +370,89 @@ class Scene:
 
     def magnitude(self, V):
          return self.Abs(V[0]) +self.Abs(V[1]) +self.Abs(V[2])  
-    def randomtarget(self):
-         global bacteriamanobject, randomenemypositions
-         bacteriamanobject.position = randomenemypositions[random.randrange(0, len(randomenemypositions))]
-         
-         return self.player.position
+    def patrolpos(self):
+         global bacteriamanobject, indexpatrol, indexpatrolpos
+         indexpatrolpos += 1
+         if indexpatrolpos >= len(enemyleveltwopartols()[indexpatrol]):
+              indexpatrol = random.randrange(0, len(enemyleveltwopartols()))
+              indexpatrolpos = 0
+              for obj in bacteriamanobject:
+                   obj.position = enemyleveltwopartols()[indexpatrol][indexpatrolpos]
+          
+         self.enemytarget = enemyleveltwopartols()[indexpatrol][indexpatrolpos]
+    def distance(self, v1, v2):
+         return math.sqrt(self.Abs(v2[0] - v1[0]) + self.Abs(v2[1] - v1[1]))
     def moveenemy(self):
-        if self.Abs(self.magnitude(self.enemytarget) - self.magnitude(bacteriamanobject.position)) < 0.02:
-             self.enemytarget = self.randomtarget()
-        targetpos = [self.enemytarget[0] - bacteriamanobject.position[0],
-                     self.enemytarget[1] - bacteriamanobject.position[1],
-                     self.enemytarget[2] - bacteriamanobject.position[2]]
+        global DeltaTime
+        if self.distance(self.enemytarget,bacteriamanobject[0].position ) > 0.5 and indexpatrolpos == 0:
+             for obj in bacteriamanobject:
+                   obj.position = enemyleveltwopartols()[indexpatrol][indexpatrolpos]           
+        if self.distance(self.enemytarget,bacteriamanobject[0].position ) < 0.5:
+             self.patrolpos()
+
+        targetpos = [self.enemytarget[0] - bacteriamanobject[0].position[0],
+                     self.enemytarget[1] - bacteriamanobject[0].position[1],
+                     0]
+
+        direction = targetpos
+        angle = math.atan2(direction[0], direction[1]) * 57.29578 + -90
+        for obj in bacteriamanobject:
+             obj.eulers[2] = angle
+
+        EnemySpeed = 2.5
         targetpos = self.normalizevector(targetpos)
-        bacteriamanobject.position[0] += targetpos[0]/135
-        bacteriamanobject.position[1] += targetpos[1]/135
-
-        direction = self.enemytarget - bacteriamanobject.position
-        angle = math.atan2(direction[0], direction[1]) * 57.29578 + 90
-        bacteriamanobject.eulers[2] = angle
-
-        
+        for obj in bacteriamanobject:
+             obj.position[0] += targetpos[0] * DeltaTime * EnemySpeed
+             obj.position[1] += targetpos[1] * DeltaTime * EnemySpeed
+    def Jumpscare(self):
+         print("DIED")
+         jumpscarevideo.preview()
+         time.sleep(0.01)
+         running = False
+         App(1200, 800)
+         pg.init()
+    def CheckDoor(self):
+         global GotKey, video,donevideo, running
+         if GotKey:
+             print("Won")
+             donevideo = True
+             running = False
+             App(1200, 800)
+             pg.init()
     def update(self, rate):
-        global beforekeys,bacteriamanobject
+        global beforekeys,bacteriamanobject, DeltaTime
         global beforePosx, beforePosz,beforePosy
-        self.gravity = 1
-        self.jumpForce = .025
-        self.speed = 3
+        self.gravity = 12
+        self.jumpHeight = 7/10000
+        self.speed = 2.35
         self.runspeed = 7
-        self.crouchspeed = 0.35
+        self.crouchspeed = 1
         self.curspeed = self.speed
         self.is_grounded = False
 
         #move bacteriaman
-        #self.moveenemy()
+        self.moveenemy()
         
           
-        mapcolliders = [Scene.boxCollider(self, 0.75, 3, 5.6, -1.65, -7, 10),
+        mapcolliders = [Scene.boxCollider(self, 0.8, 3, 5.6, -1.65, -7, 10),
                      Scene.boxCollider(self,-4.25, -3, 9.55,-4.6, -7, 10),
                      Scene.boxCollider(self, -3.6, 3.6, 9.54, 8.5, -7, 10),
-                     Scene.boxCollider(self, -15.15, -14, 5.68, -1.57, -7, 10),
+                     Scene.boxCollider(self, -15.15, -14, 15.5, -8.45, -7, 10),
                      Scene.boxCollider(self, -14.46, -7.4, -0.417, -1.564, -7, 10),
                      Scene.boxCollider(self, -14.46, -7.4, -0.417+6, -1.564+6, -7, 10),
-                     Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5)] 
+                     Scene.boxCollider(self, 7.37, 14.57, -.498, -1.57, -7, 10),
+                     Scene.boxCollider(self, 7.37, 14.57, 5.52, 4.4, -7, 10),
+                     Scene.boxCollider(self, 13.84, 15,15.5, -8.45, -7, 10),
+                     Scene.boxCollider(self, -15.15, 15,15.5, 14.5, -7, 10),
+                     Scene.boxCollider(self, -15.15, 15,-7.7, -8.7, -7, 10),
+                     Scene.boxTrigger(self, 10.5, 12.45, 4.8, 4.2, -10, 7.5, self.CheckDoor),
+                     Scene.boxCollider(self, 10.5, 12.45, 4.8, 4.2, -10, 7.5)
+                     ]
+        #mapcolliders.append(Scene.boxTrigger(self, 10.5, 12.45, 4.8, 4.2, -10, 7.5, self.CheckDoor))
+        mapcolliders.append(Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5))
+        mapcolliders.append(Scene.boxTrigger(self, bacteriamanobject[0].position[0]+-1,bacteriamanobject[0].position[0]+1, bacteriamanobject[0].position[1]+1, bacteriamanobject[0].position[1]+-1, -10, -6.5, self.Jumpscare))
+        if not GotKey:
+             mapcolliders.append(Scene.boxTrigger(self, 0.7, 1, .8, -.8, -10, -6.5, self.PickupKey))
         collide = False
         for col in mapcolliders:
              if col:
@@ -333,19 +464,25 @@ class Scene:
         
         if beforekeys != None:
             if keys[pg.K_SPACE] and not beforekeys[pg.K_SPACE] and self.is_grounded:
-                self.velocityY = self.jumpForce
+                self.velocityY = math.sqrt(self.jumpHeight * -2 * -self.gravity)
         if keys[pg.K_LSHIFT]:
-             print(self.player.position)
              self.curspeed = self.runspeed
         if keys[pg.K_LCTRL]:
              self.curspeed = self.crouchspeed
-        if keys[pg.K_t]:
-             bacteriamanobject.position[1] = self.player.position[1]
+             #print(bacteriamanobject[0].position, enemyleveltwopartols()[indexpatrol])
+             disBetweenPatrolPos = 10000
+             for pos in EnemyL2pos():
+                 if self.distance(pos, self.player.position) < disBetweenPatrolPos:
+                     disBetweenPatrolPos = self.distance(pos, self.player.position)
+             for pos in EnemyL2pos():
+                 if self.distance(pos, self.player.position) == disBetweenPatrolPos:
+                     print(pos)
+
 
              
         beforekeys = pg.key.get_pressed()
         if not self.is_grounded:
-             self.velocityY += -self.gravity * (1/60) * (1/60)
+             self.velocityY += -self.gravity * DeltaTime * 1 / 70
         self.player.position[2] += self.velocityY
         if not collide:
              beforePosz = self.player.position[0]
@@ -373,12 +510,12 @@ class Scene:
             89, max(-89, self.player.phi + dPhi)
         )
         self.player.update_vectors()
-global Frames, FPS
+
 class App:
 
     
     def __init__(self, screenWidth, screenHeight):
-
+        print("works")
         self.screenWidth = screenWidth
         self.screenHeight = screenHeight
 
@@ -395,11 +532,11 @@ class App:
         self.mainLoop()
     
     def mainLoop(self):
-        global Frames
+        i = 0 
+        global Frames, Screen
         running = True
         self.scene.beforekeys = pg.key.get_pressed()
         while (running):
-           
             #check events
             for event in pg.event.get():
                 if event.type == pg.QUIT:
@@ -409,13 +546,16 @@ class App:
                         running = False
                 
                
-            
+           
+
             self.handleKeys()
             self.handleMouse()
 
             self.scene.update(self.frameTime * 0.05)
             
             self.renderer.render(self.scene)
+
+            pg.draw.rect(Screen, (255, 255, 255), pg.Rect(30, 30, 60, 60))
 
             #timing
             self.calculateFramerate()
@@ -451,10 +591,10 @@ class App:
                 directionModifier = 270
             elif key == 9:
                 directionModifier = 315
-            
+            global DeltaTime
             dPos = [
-                (1 / 60) * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
-                (1 / 60) * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
+                DeltaTime * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
+                DeltaTime * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
                 
                 0
             ]
@@ -474,26 +614,29 @@ class App:
         pg.mouse.set_pos((self.screenWidth // 2,self.screenHeight // 2))
     
     def calculateFramerate(self):
-
+        global FPS, DeltaTime
         self.currentTime = pg.time.get_ticks()
         delta = self.currentTime - self.lastTime
         if (delta >= 1000):
-            framerate = max(1,int(120.0 * self.numFrames/delta))
+            framerate = max(1,int(1000.0 * self.numFrames/delta))
             pg.display.set_caption(f"Running at {framerate} fps.")
             self.lastTime = self.currentTime
             self.numFrames = -1
-            self.frameTime = float(120.0 / max(1,framerate))
+            self.frameTime = float(1000.0 / max(1,framerate))
+            FPS = framerate
         self.numFrames += 1
+        DeltaTime = 1 / FPS
 
     def quit(self):
         
         self.renderer.destroy()
-
+global Screen
+global key
 class GraphicsEngine:
 
     @lru_cache(maxsize=None)
     def __init__(self):
-
+        global Screen
         #initialise pygame
         pg.init()
         pg.mouse.set_visible(False)
@@ -502,7 +645,7 @@ class GraphicsEngine:
         pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK,
                                     pg.GL_CONTEXT_PROFILE_CORE)
         #window
-        pg.display.set_mode((1200,800), pg.OPENGL|pg.DOUBLEBUF)
+        Screen = pg.display.set_mode((1200,800), pg.OPENGL|pg.DOUBLEBUF)
 
         #initialise opengl
         glClearColor(0.0, 0.0, 0.0, 1)
@@ -514,39 +657,60 @@ class GraphicsEngine:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         #create renderpasses and resources
-        shader = self.createShader("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/shaders/vertex.txt", "E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/shaders/fragment.txt")
+        shader = self.createShader("shaders/vertex.txt", "shaders/fragment.txt")
         self.texturedLitPass = RenderPassTexturedLit3D(shader)
 
         #MESH
-        self.wall = Mesh("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/models/wallfull.obj", 1, 4)
-        self.wallbounds = Mesh("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/models/wallbounds.obj", 1, 4)
-        self.floor = Mesh("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/models/floor2.obj", 1, 200)
-        self.ceilingFloor = Mesh("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/models/floor2.obj", 1, 70)
+        self.wall = Mesh("models/wallfull.obj", 1, 4)
+        self.wallbounds = Mesh("models/wallbounds.obj", 1, 4)
+        self.floor = Mesh("models/floor2.obj", 1, 200)
+        self.ceilingFloor = Mesh("models/floor2.obj", 1, 70)
         
-        self.monkey = Mesh("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/models/wallfull.obj", 1, 4)        
+        self.monkey = Mesh("models/wallfull.obj", 1, 4)        
 
-        self.bacteriaman = Mesh("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/models/bacteria man.obj", .3, 1)
+        self.bacteriaman = Mesh("models/ghostbody.obj", .25, .6)
+        self.bacteriaeyes = Mesh("models/ghosteyes.obj", .25, .6)
+        self.bacteriacloth = Mesh("models/ghostcloth.obj", .25, .6)
+        self.bacteriahead = Mesh("models/ghosthead.obj", .25, .6)
+
+        self.doorpart1 = Mesh("models/doorpart1.obj", 0.5, 4)
+        self.doorpart2 = Mesh("models/doorpart2.obj", 0.5, 4)
+        self.doorpart3 = Mesh("models/doorpart3.obj", 0.5, 4)
+
+        self.keymesh = Mesh("models/key.obj", 0.25, 4)
 
         
         #TEXTURES
-        self.walltexture = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/Leather035C_2K_Color.jpg")
-        self.floortexture = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/wood2.jpg")
-        self.floorbtexture = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/woodb.jpg")
-        self.medkit_texture = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/woodrte.jpg")
-        self.ceilingg = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/ofce.jpg")
-        self.bacteriamantexture = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/BacteriaManTexture.png")
+        self.walltexture = Material("gfx/Leather035C_2K_Color.jpg")
+        self.floortexture = Material("gfx/wood2.jpg")
+        self.floorbtexture = Material("gfx/woodb.jpg")
+        self.medkit_texture = Material("gfx/woodrte.jpg")
+        self.ceilingg = Material("gfx/ofce.jpg")
+        self.bacteriamantexture = Material("gfx/Ghost texture.png")
+        self.bacteriaeyetexture = Material("gfx/Ghost eyes.png")
+        self.bacteriaclothtexture = Material("gfx/ghost cloth.png")
+        self.doorpart3Tex = Material("gfx/cone.jpg")
+        self.doorpart2Tex = Material("gfx/lev.jpg") 
+        self.doorpart2wTex = Material("gfx/lev.jpg")
+
+        self.keyTex = Material("gfx/key texture.png") 
 
         #BILLBOARDS
         self.medkit_billboard = BillBoard(w = 0.6, h = 0.5)
        
         
-        shader = self.createShader("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/shaders/vertex_light.txt", "E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/shaders/fragment_light.txt")
+        shader = self.createShader("shaders/vertex_light.txt", "shaders/fragment_light.txt")
         self.texturedPass = RenderPassTextured3D(shader)
-        self.light_texture = Material("E:/UnityWorks/github/FPS game photon/revolver-lite/pythonEngine/gfx/lightPlaceHolder.png")
+        self.light_texture = Material("gfx/lightPlaceHolder.png")
         self.light_billboard = BillBoard(w = 0.2, h = 0.1)
         global bacteriamanobject
-        bacteriamanobject = SimpleComponent(mesh = self.bacteriaman, tex = self.bacteriamantexture ,position = [0,-12.4,-5.8], eulers = [270,0,90])
+        bacteriamanobject = [SimpleComponent(mesh = self.bacteriaman, tex = self.bacteriamantexture ,position = [0,-12.4,-6.8], eulers = [270,0,90]),
+                             SimpleComponent(mesh = self.bacteriaeyes, tex = self.bacteriaeyetexture ,position = [0,-12.4,-6.8], eulers = [270,0,90]),
+                             SimpleComponent(mesh = self.bacteriacloth, tex = self.bacteriaclothtexture ,position = [0,-12.4,-6.8], eulers = [270,0,90]),
+                             SimpleComponent(mesh = self.bacteriahead, tex = self.bacteriamantexture ,position = [0,-12.4,-6.8], eulers = [270,0,90])]
         global NonScriptableObjects
+        global key
+        key = SimpleComponent(mesh = self.keymesh, tex = self.keyTex ,position = [1.05,0,-6.5], eulers = [90,0,90])
         NonScriptableObjects = [
           
         SimpleComponent(mesh = self.floor, tex = self.floortexture ,position = [0,0,-9], eulers = [90,0,0]),
@@ -591,8 +755,75 @@ class GraphicsEngine:
         SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [14.5, 2,-5.8], eulers = [90,0,0]),
         SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [14.5,2,-5.8], eulers = [90,0,0])
         ,
+        # AROUND ROOMS
+
+        ### wall 1
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [11.5, 15,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [11.5,15,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [4.6, 15,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [4.6,15,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-2.3, 15,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-2.3,15,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-2.3-6.9, 15,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-2.3-6.9,15,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-2.3-13.8, 15,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-2.3-13.8,15,-5.8], eulers = [90,0,90])
+        ,
+        ### wall 2
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [14.5, 12.9+2.85,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [14.5,12.9+2.85,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [14.5, 6+2.85,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [14.5,6+2.85,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [14.5, -4.9,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [14.5,-4.9,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [14.5, 6+2.85,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [14.5,6+2.85,-5.8], eulers = [90,0,0])
+        ,
+        ### wall 3
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [11.5, -8.2,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [11.5,-8.2,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [4.6, -8.2,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [4.6,-8.2,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-2.3, -8.2,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-2.3,-8.2,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-2.3-6.9, -8.2,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-2.3-6.9,-8.2,-5.8], eulers = [90,0,90])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-2.3-13.8, -8.2,-5.8], eulers = [90,0,90]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-2.3-13.8,-8.2,-5.8], eulers = [90,0,90])
+        ,
         
-        bacteriamanobject
+        ### wall 4
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-14.5, 12.9+2.85,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-14.5,12.9+2.85,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-14.5, 6+2.85,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-14.5,6+2.85,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-14.5, -4.9,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-14.5,-4.9,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-14.5, 6+2.85,-5.8], eulers = [90,0,0]),
+        SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-14.5,6+2.85,-5.8], eulers = [90,0,0])
+        ,
+        SimpleComponent(mesh = self.doorpart1, tex = self.floorbtexture ,position = [11.45,4.5,-6.62], eulers = [90,0,-90]),
+        SimpleComponent(mesh = self.doorpart2, tex = self.doorpart2Tex ,position = [11.45,4.5,-6.62], eulers = [90,0,-90]),
+        SimpleComponent(mesh = self.doorpart3, tex = self.doorpart3Tex ,position = [11.45,4.5,-6.62], eulers = [90,0,-90]),
+        SimpleComponent(mesh = self.doorpart2, tex = self.doorpart2wTex ,position = [11.45,4.5,-6.62], eulers = [90,0,-90])
+        ,
+        # ENEMY
+        bacteriamanobject[0],bacteriamanobject[1],bacteriamanobject[2],bacteriamanobject[3],
+        key
         ]
         
 
@@ -612,15 +843,16 @@ class GraphicsEngine:
         return shader
     
     def render(self, scene):
-
         #refresh screen
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        global Screen,donevideo
+        if donevideo:
+             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-        self.texturedLitPass.render(scene, self)
+             self.texturedLitPass.render(scene, self)
 
-        self.texturedPass.render(scene, self)
-
-        pg.display.flip()
+             self.texturedPass.render(scene, self)
+             
+             pg.display.flip()
 
     
     def destroy(self):
@@ -635,8 +867,15 @@ class GraphicsEngine:
         self.light_texture.destroy()
         self.texturedLitPass.destroy()
         self.texturedPass.destroy()
+
         self.bacteriaman.destroy()
         self.bacteriamantexture.destroy()
+        self.bacteriaeyes.destroy()
+        self.bacteriaeyetexture.destroy()
+        self.bacteriacloth.destroy()
+        self.bacteriaclothtexture.destroy()
+        self.bacteriahead.destroy()
+        
         pg.quit()
 
 class RenderPassTexturedLit3D:
