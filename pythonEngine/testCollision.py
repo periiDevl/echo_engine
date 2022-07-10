@@ -899,99 +899,56 @@ class Scene:
 
         self.lightslevthree = [
            Light(
-                position = [4, 0, -5.5],
-                color = (1, 1, 1), strength= 3
-
-            ),
-
-            Light(
-                position = [17.5, 0, -5.5],
+                position = [11.365149, 15.442753, -5.5],
                 color = (1, 1, 1), strength= 3
 
             ),
 
            Light(
-                position = [-3.5, 0, -5.5],
+                position = [-12.633909, -18.710358, -5.5],
                 color = (1, 1, 1), strength= 3
 
             ),
 
            Light(
-                position = [11.049395 -10.653574  -6.5075],
+                position = [11.683742,2.8594892, -5.5],
                 color = (1, 1, 1), strength= 3
 
             ),
 
-           #2
-            Light(
-                position = [4, 20, -5.5],
-                color = (1, 1, 1), strength= 3
-
-            ),
-
-            Light(
-                position = [17.5, 17, -5.5],
+           
+           Light(
+                position = [17.235008, -15.391624, -5.5],
                 color = (1, 1, 1), strength= 3
 
             ),
 
            Light(
-                position = [-3.5, 17, -5.5],
+                position = [-0.88856035, -10.726019, -5.5],
                 color = (1, 1, 1), strength= 3
 
             ),
 
-           Light(
-                position = [-10.5, 17, -5.5],
-                color = (1, 1, 1), strength= 3),
-
-           #3
            
 
            Light(
-                position = [4, 8, -5.5],
-                color = (1, 1, 1), strength= 3
-
-            ),
-
-            Light(
-                position = [17.5, 8, -5.5],
+                position = [-15.060681,  -8.165347, -5.5],
                 color = (1, 1, 1), strength= 3
 
             ),
 
            Light(
-                position = [-3.5, 8, -5.5],
+                position = [-3.3407845,  8.536253, -5.5],
                 color = (1, 1, 1), strength= 3
 
             ),
 
            Light(
-                position = [-10.5, 8, -5.5],
-                color = (1, 1, 1), strength= 3),
-           #4
-           Light(
-                position = [4, 25, -5.5],
+                position = [-12.453144,  16.426233, -5.5],
                 color = (1, 1, 1), strength= 3
 
             ),
 
-            Light(
-                position = [17.5, 25, -5.5],
-                color = (1, 1, 1), strength= 3
-
-            ),
-
-           Light(
-                position = [-3.5, 25, -5.5],
-                color = (1, 1, 1), strength= 3
-
-            ),
-
-           Light(
-                position = [-10.5, 25, -5.5],
-                color = (1, 1, 1), strength= 3)
-           
         ]
 
         
