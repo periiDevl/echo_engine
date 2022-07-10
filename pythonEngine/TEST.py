@@ -699,7 +699,7 @@ class Scene:
         global beforePosx, beforePosz,beforePosy
         self.gravity = 1
         self.jumpForce = .021
-        self.speed = 20
+        self.speed = 10
         self.runspeed = 7
         self.curspeed = self.speed
         self.is_grounded = False
@@ -728,7 +728,26 @@ class Scene:
             mapcolliders = [
                          
                          #cene.groundCollider(self, -0.6, 0.6 ,8.5, 6.6, -6.042, 0),
-                         Scene.groundCollider(self,-0.06, -0.1, -1.27,0.7252, -7, 0),
+                         Scene.groundCollider(self, -0.593,0.683 ,6.03, -6.647, -7, 0),
+                         Scene.groundCollider(self,-6.618, -5.5 ,6.03, -6.647, -7, 0),
+                         Scene.groundCollider(self, -6.08, 6.54 ,12.5, 11.268 , -7, 0),
+                         Scene.groundCollider(self, 0.3, 6.512 ,5.944, 4.68 , -7, 0),
+                         Scene.groundCollider(self, -23.39, 13.515,20.83, 19.44 , -7, 0),
+                         Scene.groundCollider(self, 19.684,20.919,25.92, -23.464 , -7, 0),
+                         Scene.groundCollider(self,0.715, 20.93,25.89, 24.722 , -7, 0),
+                         Scene.groundCollider(self,0.661, 1.93,25.89, 20 , -7, 0),
+                         Scene.groundCollider(self,11.56, 24.417,-20.75, -21.95 , -7, 0),
+                         Scene.groundCollider(self,-6.07, 12.789,-15.1, -28.55 , -7, 0),
+                         Scene.groundCollider(self,-18.28, -4.25,-27.21, -28.469 , -7, 0),
+                         Scene.groundCollider(self,-13.131, -11.76,-21.4,-30 , -7, 0),
+                         Scene.groundCollider(self,-18.39, -17.09, 20.84,-28.48 , -7, 0),
+                         Scene.groundCollider(self,-12.87,-5.5,-5.43,-6.74 , -7, 0),
+                         Scene.groundCollider(self,-13.14,-11.77, 12.12,5.43 , -7, 0),
+                         Scene.groundCollider(self,11.37,12.73, 12.12,5.43 , -7, 0),
+                         Scene.groundCollider(self,-13.05,-6.48, -9.89,-11.178 , -7, 0),
+                         Scene.groundCollider(self,-13.148,-11.88, -9.87, -16.38 , -7, 0),
+                         
+                         Scene.groundCollider(self,8.74, 15.29,0.364, -0.93 , -7, 0),
                          Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5)]
         
         
