@@ -233,6 +233,7 @@ class RenderPassTexturedLit3D:
         
         global leveloneobjects
         global leveltwobjects
+        global levelthreeobjects
         def createL0():
             global maplevel
             for nonscriptname in levelzeroobjects:
@@ -304,9 +305,10 @@ class RenderPassTexturedLit3D:
                 nonscriptname.tex.use()
                 glBindVertexArray(nonscriptname.mesh.vao)
                 glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
+                
         def createL3():
 
-            for nonscriptname in levelthreebjects:
+            for nonscriptname in levelthreeobjects:
 
                 
                 
@@ -358,6 +360,11 @@ class RenderPassTexturedLit3D:
                 glUniform3fv(self.lightLocation["position"][i], 1, light.position)
                 glUniform3fv(self.lightLocation["color"][i], 1, light.color)
                 glUniform1f(self.lightLocation["strength"][i], light.strength)
+        if maplevel == 3:
+            for i,light in enumerate(scene.lightslevfour):
+                glUniform3fv(self.lightLocation["position"][i], 1, light.position)
+                glUniform3fv(self.lightLocation["color"][i], 1, light.color)
+                glUniform1f(self.lightLocation["strength"][i], light.strength)
        
         #leveloneobjects = [SimpleComponent(mesh = engine.ca,position = [6,0,1], eulers = [0,0,0]),]
         #def createNonObjects():
@@ -370,6 +377,8 @@ class RenderPassTexturedLit3D:
             createL1()
         elif maplevel == 2:
             createL2()
+        elif maplevel == 3:
+            createL3()
         
             for fow in scene.fows:
 
@@ -421,7 +430,7 @@ class GraphicsEngine:
         pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK,
                                     pg.GL_CONTEXT_PROFILE_CORE)
         #window
-        pg.display.set_mode((1200,800), pg.OPENGL|pg.DOUBLEBUF)
+        pg.display.set_mode((1920,1080), pg.OPENGL|pg.DOUBLEBUF)
 
 
         
@@ -504,7 +513,7 @@ class GraphicsEngine:
         shader = self.createShader("shaders/vertex_light.txt", "shaders/fragment_light.txt")
         self.texturedPass = RenderPassTextured3D(shader)
         self.light_texture = Material("gfx/lightPlaceHolder.png")
-        self.light_billboard = BillBoard(w = 0.2, h = 0.1)
+        self.light_billboard = BillBoard(w = 0, h = 0)
         global boobj
         boobj = [SimpleComponent(mesh = self.boo_body, tex = self.boo_body_texture ,position = [3.8,-9.6,-5.8], eulers = [270,0,90]),
                  SimpleComponent(mesh = self.boo_eye, tex = self.boo_eye_texture ,position = [3.8,-9.6,-5.8], eulers = [270,0,90]),
@@ -691,8 +700,8 @@ class GraphicsEngine:
         levelthreeobjects = [SimpleComponent(mesh = self.floor, tex = self.mosstexture ,position = [0,0,-9], eulers = [90,0,0]),
             SimpleComponent(mesh = self.ceilingFloor, tex = self.ceilingg ,position = [0,0,-2.5], eulers = [90,0,0]),
             
-            SimpleComponent(mesh = self.levthreeW, tex = self.doorpart2wTex ,position = [0,-3.4,-3.5], eulers = [90,0,90]),
-            SimpleComponent(mesh = self.levthreeB, tex = self.wall_lev_two_texture ,position = [0,-3.4,-3.5], eulers = [90,0,90]),
+            SimpleComponent(mesh = self.levthreeW, tex = self.doorpart2wTex ,position = [0,-3.4,-8.2], eulers = [-90,0,90]),
+            SimpleComponent(mesh = self.levthreeB, tex = self.wall_lev_two_texture ,position = [0,-3.4,-8.2], eulers = [-90,0,90]),
 ]
 
         
@@ -1009,9 +1018,30 @@ class Scene:
                 position = [-12.453144,  16.426233, -5.5],
                 color = (1, 1, 1), strength= 3
 
+            ),]
+        self.lightslevfour = [
+           Light(
+                position = [-15, 3, -5],
+                color = (1, 1, 1), strength= 1.5
+                
+            ),
+            Light(
+                position = [-5, 2, -5],
+                color = (1, 1, 1), strength= 1.5
+                
             ),
 
-        ]
+            Light(
+                position = [6, -11.5, -5],
+                color = (1, 1, 1), strength= 1.5
+                
+            ),
+            Light(
+                position = [-3.5, -11.5, -5],
+                color = (1, 1, 1), strength= 1.5
+                
+            ),]
+        
 
         
 
@@ -1056,6 +1086,9 @@ class Scene:
 
     def PickupKey(self):
         global GotKey, maplevel,leveltwobjects
+        pickupkeySound = pg.mixer.Sound('sounds/pickupkey.wav')
+        pickupkeySound.play()
+        pickupkeySound.set_volume(0.1)
         GotKey = True
         if maplevel == 1:
             levelonebjects.remove(levelonebjects[len(levelonebjects)-1])
@@ -1095,6 +1128,8 @@ class Scene:
             
                      obj.position = [3.8,0,-5.8]
                      obj.position = [3.8,0,-5.8]
+             if maplevel == 3:
+                 self.player.position = [-15, 3, -6]
     def normalizevector(self, vec):
          length = math.sqrt(vec[0]**2 + vec[1]**2 + vec[2]**2)
          if length == 0:
@@ -1185,10 +1220,10 @@ class Scene:
     def update(self, rate):
         global beforekeys,boobj, GotKey
         global beforePosx, beforePosz,beforePosy
-        self.gravity = 5
+        self.gravity = 2
         self.jumpForce = .03
-        self.speed = 2.35
-        self.runspeed = 7
+        self.speed = 2
+        self.runspeed = 2
         self.curspeed = self.speed
         self.is_grounded = False
         global maplevel
@@ -1269,7 +1304,21 @@ class Scene:
 
             if not GotKey:
                     mapcolliders.append(Scene.boxTrigger(self, 1.9, 2.25, 24, 22, -10, -6.5, self.PickupKey))
-        
+        if maplevel == 3:
+            
+            mapcolliders = [
+                         
+                         Scene.groundCollider(self, -0.6,0.8 ,6, -6.6, -7, 0),
+                         Scene.groundCollider(self,-20, -0.5 ,5.5, 4.75, -7, 0),
+                         Scene.groundCollider(self, -0.6, 12.7 ,-5.6, -6.6 , -7, 0),
+                         Scene.groundCollider(self, 11.4, 12.5 ,-5,-18.5, -7, 0),
+                         Scene.groundCollider(self, -7, 12.8,-17.5, -19 , -7, 0),
+                         Scene.groundCollider(self, -7,-5.8,0.2, -25 , -7, 0),
+                         Scene.groundCollider(self,-5.8, -19.5,0, -1.5 , -7, 0),
+                         Scene.groundCollider(self,-0.31, 0.35,20, -20 , -7, -6),
+                         Scene.groundCollider(self,-22, -17,9, -2 , -7, -6)
+                ]
+
         collide = False
         for col in mapcolliders:
              if col:
@@ -1281,13 +1330,12 @@ class Scene:
         
         if beforekeys != None:
             if keys[pg.K_SPACE] and not beforekeys[pg.K_SPACE] and self.is_grounded:
+                jumpSound = pg.mixer.Sound('sounds/startjump.wav')
+                jumpSound.set_volume(0.3)
+                jumpSound.play(1)
                 self.velocityY = self.jumpForce
-        if keys[pg.K_LSHIFT]:
-             print(self.player.position)
              
              self.curspeed = self.runspeed
-        if keys[pg.K_LCTRL]:
-            print(bacteriamanobject[0].position)
         beforekeys = pg.key.get_pressed()
         if not self.is_grounded:
              self.velocityY += -self.gravity * (1/60)/100
@@ -1348,7 +1396,7 @@ class App:
         walkSounds = pg.mixer.Sound('sounds/walkingOnWoodSound.mp3')
         walkSoundd = pg.mixer.Sound('sounds/walkingOnWoodSound.mp3')
         
-        backroundSounds = pg.mixer.Sound('sounds/LightBuzz.mp3')
+        backroundSounds = pg.mixer.Sound('sounds/backroundSound.wav')
         backroundSounds.play(-1)
         backroundSounds.set_volume(0.1)
         running = True
