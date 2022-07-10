@@ -9,12 +9,16 @@ import numpy as np
 import pyrr
 import math
 import random
-from numba import *
+
 from functools import *
 
-
+import time
 global maplevel
+
 maplevel = 0
+
+
+
 
 class Mesh:
 
@@ -151,7 +155,7 @@ class Player:
     def __init__(self, position):
 
         self.position = np.array(position, dtype = np.float32)
-        self.theta = 0
+        self.theta = 90
         self.phi = 0
         self.update_vectors()
     def update_vectors(self):
@@ -183,7 +187,368 @@ global beforePosy
 beforePosy = 0
 
 
-global bacteriamanobject 
+class RenderPassTexturedLit3D:
+
+    @lru_cache(maxsize=None)
+    def __init__(self, shader):
+
+        #initialise opengl
+        self.shader = shader
+        glUseProgram(self.shader)
+        glUniform1i(glGetUniformLocation(self.shader, "imageTexture"), 0)
+
+        projection_transform = pyrr.matrix44.create_perspective_projection(
+            fovy = 60, aspect = 640/480, 
+            near = 0.1, far = 50, dtype=np.float32
+        )
+        glUniformMatrix4fv(
+            glGetUniformLocation(self.shader,"projection"),
+            1, GL_FALSE, projection_transform
+        )
+        self.modelMatrixLocation = glGetUniformLocation(self.shader, "model")
+        self.viewMatrixLocation = glGetUniformLocation(self.shader, "view")
+        self.lightLocation = {
+            "position": [
+                glGetUniformLocation(self.shader, f"Lights[{i}].position")
+                for i in range(20)
+            ],
+            "color": [
+                glGetUniformLocation(self.shader, f"Lights[{i}].color")
+                for i in range(20)
+            ],
+            "strength": [
+                glGetUniformLocation(self.shader, f"Lights[{i}].strength")
+                for i in range(20)
+            ]
+        }
+        self.cameraPosLoc = glGetUniformLocation(self.shader, "cameraPostion")
+    #cant cache
+    
+    def render(self, scene, engine):
+
+        
+        global leveloneobjects
+        global leveltwobjects
+        def createLO():
+            global maplevel
+            for nonscriptname in leveloneobjects:
+
+                
+                
+                model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
+                model_transform = pyrr.matrix44.multiply(
+                    m1=model_transform, 
+                    m2=pyrr.matrix44.create_from_eulers(
+                        eulers=np.radians(nonscriptname.eulers), dtype=np.float32
+                    )
+                )
+                model_transform = pyrr.matrix44.multiply(
+                    m1=model_transform, 
+                    m2=pyrr.matrix44.create_from_translation(
+                        vec=np.array(nonscriptname.position),dtype=np.float32
+                    )
+                )
+                glUniformMatrix4fv(self.modelMatrixLocation,1,GL_FALSE,model_transform)
+                nonscriptname.tex.use()
+                glBindVertexArray(nonscriptname.mesh.vao)
+                glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
+
+        def createLT():
+
+            for nonscriptname in leveltwobjects:
+
+                
+                
+                model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
+                model_transform = pyrr.matrix44.multiply(
+                    m1=model_transform, 
+                    m2=pyrr.matrix44.create_from_eulers(
+                        eulers=np.radians(nonscriptname.eulers), dtype=np.float32
+                    )
+                )
+                model_transform = pyrr.matrix44.multiply(
+                    m1=model_transform, 
+                    m2=pyrr.matrix44.create_from_translation(
+                        vec=np.array(nonscriptname.position),dtype=np.float32
+                    )
+                )
+                glUniformMatrix4fv(self.modelMatrixLocation,1,GL_FALSE,model_transform)
+                nonscriptname.tex.use()
+                glBindVertexArray(nonscriptname.mesh.vao)
+                glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
+
+                
+
+                
+        
+        glUseProgram(self.shader)
+
+        view_transform = pyrr.matrix44.create_look_at(
+            eye = scene.player.position,
+            target = scene.player.position + scene.player.forwards,
+            up = scene.player.up, dtype = np.float32
+        )
+        glUniformMatrix4fv(self.viewMatrixLocation, 1, GL_FALSE, view_transform)
+
+        glUniform3fv(self.cameraPosLoc, 1, scene.player.position)
+
+        for i,light in enumerate(scene.lights):
+            glUniform3fv(self.lightLocation["position"][i], 1, light.position)
+            glUniform3fv(self.lightLocation["color"][i], 1, light.color)
+            glUniform1f(self.lightLocation["strength"][i], light.strength)
+       
+        #leveloneobjects = [SimpleComponent(mesh = engine.ca,position = [6,0,1], eulers = [0,0,0]),]
+        #def createNonObjects():
+        
+        
+        
+        if maplevel == 0:
+            createLO()
+        elif maplevel == 1:
+            createLT()
+        
+            for fow in scene.fows:
+
+                engine.fow_texture.use()
+
+                directionFromPlayer = fow.position - scene.player.position
+                wallpos = fow.position
+                angle1 = np.arctan2(-directionFromPlayer[1],directionFromPlayer[0])
+                dist2d = math.sqrt(directionFromPlayer[0] ** 2 + directionFromPlayer[1] ** 2)
+                angle2 = np.arctan2(directionFromPlayer[2],dist2d)
+
+                model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
+                model_transform = pyrr.matrix44.multiply(
+                    model_transform,
+                    pyrr.matrix44.create_from_y_rotation(theta=angle2, dtype=np.float32)
+                )
+                model_transform = pyrr.matrix44.multiply(
+                    model_transform,
+                    pyrr.matrix44.create_from_z_rotation(theta=angle1, dtype=np.float32)
+                )
+                model_transform = pyrr.matrix44.multiply(
+                    model_transform,
+                    pyrr.matrix44.create_from_translation(fow.position,dtype=np.float32)
+                )
+                glUniformMatrix4fv(glGetUniformLocation(self.shader,"model"),1,GL_FALSE,model_transform)
+
+
+                glBindVertexArray(engine.fow_billboard.vao)
+                glDrawArrays(GL_TRIANGLES, 0, engine.fow_billboard.vertexCount)
+   
+    def destroy(self):
+        
+        
+        glDeleteProgram(self.shader)
+
+    
+
+class GraphicsEngine:
+
+    @lru_cache(maxsize=None)
+    def __init__(self):
+
+        #initialise pygame
+        pg.init()
+        
+        pg.mouse.set_visible(False)
+        pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
+        pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
+        pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK,
+                                    pg.GL_CONTEXT_PROFILE_CORE)
+        #window
+        pg.display.set_mode((1200,800), pg.OPENGL|pg.DOUBLEBUF)
+
+
+        
+        #initialise opengl
+        glClearColor(0.0, 0.0, 0.0, 1)
+        
+        glEnable(GL_DEPTH_TEST)
+        #glEnable(GL_CULL_FACE)
+        #glCullFace(GL_BACK)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        #create renderpasses and resources
+        shader = self.createShader("shaders/vertex.txt", "shaders/fragment.txt")
+        self.texturedLitPass = RenderPassTexturedLit3D(shader)
+
+        #MESH
+        self.wall = Mesh("models/wallfull.obj", 1, 4)
+        self.wallbounds = Mesh("models/wallbounds.obj", 1, 4)
+        self.floor = Mesh("models/floor2.obj", 1, 200)
+        self.ceilingFloor = Mesh("models/floor2.obj", 1, 70) 
+        self.monkey = Mesh("models/wallfull.obj", 1, 4)        
+        self.poster = Mesh("models/posterObj.obj", 0.3, 2.75)
+        self.table = Mesh("models/table.obj", 0.8, 4)
+
+        self.bacteriaman = Mesh("models/bacteria man.obj", .3, 1)
+        self.boo_body = Mesh("models/boo_body.obj", .3, 1)
+        self.boo_eye = Mesh("models/boo_eyes.obj", .3, 1)
+        self.boo_eye_pup = Mesh("models/boo_eyes_pupels.obj", .3, 1)
+        self.boo_bars = Mesh("models/boo_bars.obj", .3, 1)
+        self.doorpart1 = Mesh("models/doorpart1.obj", 0.5, 4)
+        self.doorpart2 = Mesh("models/doorpart2.obj", 0.5, 4)
+        self.doorpart3 = Mesh("models/doorpart3.obj", 0.5, 4)
+
+        self.levtwo = Mesh("models/level2W.obj", 3.25, 4)
+        self.levtwoB = Mesh("models/level2B.obj", 3.25, 4)
+        
+        
+        #TEXTURES
+        self.walltexture = Material("gfx/Leather035C_2K_Color.jpg")
+        self.floortexture = Material("gfx/wood2.jpg")
+        self.floorbtexture = Material("gfx/woodb.jpg")
+        self.fow_texture = Material("gfx/yellowFoliage.png")
+        self.ceilingg = Material("gfx/ofce.jpg")
+        self.bacteriamantexture = Material("gfx/BacteriaManTexture.png") 
+        self.posterTexture = Material("gfx/wasdT.png")
+
+        self.doorpart3Tex = Material("gfx/cone.jpg")
+        self.doorpart2Tex = Material("gfx/lev.jpg") 
+        self.doorpart2wTex = Material("gfx/lev.jpg")
+        self.doorpart2wTex = Material("gfx/lev.jpg")
+
+        self.boo_body_texture = Material("gfx/boo_body_tex.png")
+        self.boo_eye_texture = Material("gfx/boo_eye_texture.png") 
+        self.boo_eye_pup_texture = Material("gfx/boo_pup_texture.png")
+        self.boo_bars_texture = Material("gfx/boo_bar_texture.png")
+
+        self.wall_lev_two_texture = Material("gfx/woodlevtwo.jpg")
+        self.mosstexture = Material("gfx/moss.jpg")
+        
+        #BILLBOARDS
+        self.fow_billboard = BillBoard(w = 1, h = 1)
+       
+        
+        shader = self.createShader("shaders/vertex_light.txt", "shaders/fragment_light.txt")
+        self.texturedPass = RenderPassTextured3D(shader)
+        self.light_texture = Material("gfx/lightPlaceHolder.png")
+        self.light_billboard = BillBoard(w = 0.2, h = 0.1)
+        global boobj
+        boobj = [SimpleComponent(mesh = self.boo_body, tex = self.boo_body_texture ,position = [0,-12.4,-5.8], eulers = [270,0,90]),
+                 SimpleComponent(mesh = self.boo_eye, tex = self.boo_eye_texture ,position = [0,-12.4,-5.8], eulers = [270,0,90]),
+                 SimpleComponent(mesh = self.boo_eye_pup, tex = self.boo_eye_pup_texture ,position = [0,-12.4,-5.8], eulers = [270,0,90]),
+                 SimpleComponent(mesh = self.boo_bars, tex = self.boo_bars_texture ,position = [0,-12.4,-5.8], eulers = [270,0,90])]
+        
+        global maplevel
+        
+        global leveloneobjects
+        leveloneobjects = [SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [3.7,0,-5.8], eulers = [90,0,0]),
+            SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-3.7,0,-5.8], eulers = [90,0,0]),
+            SimpleComponent(mesh = self.floor, tex = self.floortexture ,position = [0,0,-9], eulers = [90,0,0]),
+            SimpleComponent(mesh = self.ceilingFloor, tex = self.ceilingg ,position = [0,0,-2.5], eulers = [90,0,0]),
+            SimpleComponent(mesh = self.poster, tex = self.posterTexture ,position = [2,8.6,-5.8], eulers = [-90,-90, 0]),
+            SimpleComponent(mesh = self.table, tex = self.floorbtexture ,position = [2,7.7,-7.8], eulers = [-90,0, 90]),
+
+            
+            SimpleComponent(mesh = self.doorpart1, tex = self.floorbtexture ,position = [-2,-2.9,-6.62], eulers = [90,0,90]),
+            SimpleComponent(mesh = self.doorpart2, tex = self.doorpart2Tex ,position = [-2.1,-2.8,-6.62], eulers = [90,0,90]),
+            SimpleComponent(mesh = self.doorpart3, tex = self.doorpart3Tex ,position = [-2,-2.9,-6.62], eulers = [90,0,90]),
+            SimpleComponent(mesh = self.doorpart2, tex = self.doorpart2wTex ,position = [-1.4,-2.8,-6.62], eulers = [90,0,90]),
+            
+
+            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-3.7,0,-5.8], eulers = [90,0,0]),
+            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [3.7,0,-5.8], eulers = [90,0,0]),
+
+            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-3.7, 6.9,-5.8], eulers = [90,0,0]),
+            SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-3.7,6.9,-5.8], eulers = [90,0,0]),
+            
+            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [3.7, 6.9,-5.8], eulers = [90,0,0]),
+            SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [3.7,6.9,-5.8], eulers = [90,0,0]),
+            
+            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, 9,-5.8], eulers = [90,0,90]),
+            SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,9,-5.8], eulers = [90,0,90]),
+            
+            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, -3.4,-5.8], eulers = [90,0,90]),
+            SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,-3.4,-5.8], eulers = [90,0,90]),
+
+            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, -1,-5.8], eulers = [90,0,0]),
+            SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,-1,-5.8], eulers = [90,0,0]),
+                                    
+        boobj[0],
+        boobj[1],
+        boobj[2],
+        boobj[3]
+        ]
+
+        global leveltwobjects
+        leveltwobjects = [
+            SimpleComponent(mesh = self.floor, tex = self.mosstexture ,position = [0,0,-9], eulers = [90,0,0]),
+            SimpleComponent(mesh = self.ceilingFloor, tex = self.ceilingg ,position = [0,0,-2.5], eulers = [90,0,0]),
+            
+            SimpleComponent(mesh = self.levtwo, tex = self.doorpart2wTex ,position = [0,-3.4,-3.5], eulers = [90,0,90]),
+            SimpleComponent(mesh = self.levtwoB, tex = self.wall_lev_two_texture ,position = [0,-3.4,-3.5], eulers = [90,0,90])
+            ]
+
+        
+        
+        
+        
+    @lru_cache(maxsize=None)
+    def createShader(self, vertexFilepath, fragmentFilepath):
+
+        with open(vertexFilepath,'r') as f:
+            vertex_src = f.readlines()
+
+        with open(fragmentFilepath,'r') as f:
+            fragment_src = f.readlines()
+        
+        shader = compileProgram(compileShader(vertex_src, GL_VERTEX_SHADER),
+                                compileShader(fragment_src, GL_FRAGMENT_SHADER))
+        
+        return shader
+    
+    def render(self, scene):
+
+        #refresh screen
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        self.texturedLitPass.render(scene, self)
+
+        self.texturedPass.render(scene, self)
+
+        pg.display.flip()
+
+    
+    def destroy(self):
+        self.doorpart1.destroy()
+        self.doorpart2.destroy()
+        self.doorpart2.destroy()
+        self.doorpart3Tex.destroy()
+        self.doorpart2Tex.destroy()
+        self.doorpart2wTex.destroy()
+        self.poster.destroy()
+        self.table.destroy()
+        self.posterTexture.destroy()
+        self.floor.destroy()
+        self.ceilingg.destroy()
+        self.floorbtexture.destroy()
+        self.walltexture.destroy()
+        self.fow_billboard.destroy()
+        self.fow_texture.destroy()
+        self.light_billboard.destroy()
+        self.light_texture.destroy()
+        self.texturedLitPass.destroy()
+        self.texturedPass.destroy()
+        self.boo_body.destroy()
+        self.boo_eye.destroy()
+        self.boo_eye_pup.destroy()
+        self.boo_bars.destroy()
+
+        self.boo_body_texture.destroy()
+        self.boo_eye_texture.destroy()
+        self.boo_eye_pup_texture.destroy()
+        self.boo_bars_texture.destroy()
+
+        self.levtwo.destroy()
+        self.levtwoB.destroy()
+        self.wall_lev_two_texture.destroy()
+        
+        pg.quit()
+
+global boobj 
 global randomenemypositions
 randomenemypositions = [[1, 1, -6.5], [-10, -15, -6.5],[6, 6, -6.5]]
 class Scene:
@@ -196,12 +561,20 @@ class Scene:
     
     def __init__(self):
         self.curspeed = 0
-        self.medkits = [
+        self.fows = [
             SimpleComponent(
                 mesh = 'monkey',
                 tex ='monkeu'
                 ,
-                position = [3,0,0.5],
+                position = [0, 7, -7.5],
+                eulers = [0,0,0]
+            ),
+
+            SimpleComponent(
+                mesh = 'monkey',
+                tex ='monkeu'
+                ,
+                position = [0, 8, -7.5],
                 eulers = [0,0,0]
             )
         ]
@@ -233,7 +606,7 @@ class Scene:
         self.player = Player(
             position = [1,1,-5.5]
         )
-        self.enemytarget = bacteriamanobject.position
+        self.enemytarget = boobj[0].position
     
     def boxCollider(self, z1, z2, x1, x2, y1, y2):
         global beforePosx
@@ -253,6 +626,22 @@ class Scene:
              return True
         else:
              return False
+
+    def doorcolider(self, z1, z2, x1, x2, y1, y2):
+            global beforePosx
+            global beforePosz
+            global beforePosy
+            global maplevel
+
+            # Check if inside the box at X-axis and Check if inside the box at Z-axis and Check if inside the box at Y-axis
+            if self.player.position[1] < x1 and self.player.position[1] > x2 and self.player.position[0] > z1 and self.player.position[0] < z2 and self.player.position[2] > y1 and self.player.position[2] < y2:
+                 
+                maplevel = maplevel + 1
+                
+                
+                return True
+            else:
+                 return False
 
 
     def groundCollider(self, z1, z2, x1, x2, y1, y2):
@@ -286,31 +675,43 @@ class Scene:
     def magnitude(self, V):
          return self.Abs(V[0]) +self.Abs(V[1]) +self.Abs(V[2])  
     def randomtarget(self):
-         global bacteriamanobject, randomenemypositions
-         bacteriamanobject.position = randomenemypositions[random.randrange(0, len(randomenemypositions))]
+         global boobj, randomenemypositions
+         
+         self.enemytarget = randomenemypositions[random.randrange(0, len(randomenemypositions))]
          
          return self.player.position
     def moveenemy(self):
-        if self.Abs(self.magnitude(self.enemytarget) - self.magnitude(bacteriamanobject.position)) < 0.02:
+        if self.Abs(self.magnitude(self.enemytarget) - self.magnitude(boobj[0].position)) < 0.02:
              self.enemytarget = self.randomtarget()
-        targetpos = [self.enemytarget[0] - bacteriamanobject.position[0],
-                     self.enemytarget[1] - bacteriamanobject.position[1],
-                     self.enemytarget[2] - bacteriamanobject.position[2]]
+        targetpos = [self.enemytarget[0] - boobj[0].position[0],
+                     self.enemytarget[1] - boobj[0].position[1],
+                     self.enemytarget[2] - boobj[0].position[2]]
         targetpos = self.normalizevector(targetpos)
-        bacteriamanobject.position[0] += targetpos[0]/35
-        bacteriamanobject.position[1] += targetpos[1]/35
+        for obj in boobj:
+            
+            obj.position[0] += targetpos[0]/35
+            obj.position[1] += targetpos[1]/35
+
+    
+        
     def update(self, rate):
-        global beforekeys,bacteriamanobject
+        global beforekeys,boobj
         global beforePosx, beforePosz,beforePosy
         self.gravity = 1
         self.jumpForce = .021
-        self.speed = 3
+        self.speed = 20
         self.runspeed = 7
         self.curspeed = self.speed
         self.is_grounded = False
+        global maplevel
+        global mapcolliders
+
+        
+        
+        mapcolliders = [Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5)]
 
         #move bacteriaman
-        self.moveenemy()
+        #self.moveenemy()
         
         
         if maplevel == 0:
@@ -320,10 +721,16 @@ class Scene:
                          Scene.groundCollider(self, -4, -3, 11.3, -4, -7, 0),
                          Scene.groundCollider(self, -0.6, 0.5, 2.6, -11, -7, 0),
                          Scene.groundCollider(self, 1, 3, 8.5, 6.7, -7, -6),
-                         Scene.groundCollider(self, -3, -1, -2.65, -6.7, -7, -6),
+                         #door!
+                         Scene.doorcolider(self, -3, -1, -2.65, -6.7, -7, -6),
                          Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5)]
         if maplevel == 1:
-            mapcolliders = [Scene.groundCollider(self, -4, 4, -2.8, -4.5, -7, 0)]
+            mapcolliders = [
+                         
+                         #cene.groundCollider(self, -0.6, 0.6 ,8.5, 6.6, -6.042, 0),
+                         Scene.groundCollider(self,-0.06, -0.1, -1.27,0.7252, -7, 0),
+                         Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5)]
+        
         
         collide = False
         for col in mapcolliders:
@@ -339,6 +746,7 @@ class Scene:
                 self.velocityY = self.jumpForce
         if keys[pg.K_LSHIFT]:
              print(self.player.position)
+             
              self.curspeed = self.runspeed
         if keys[pg.K_t]:
              bacteriamanobject.position[1] = self.player.position[1]
@@ -354,7 +762,7 @@ class Scene:
              beforePosy = self.player.position[2]
              
         
-        
+    
     def move_player(self, dPos):
         dPos[0] *= self.curspeed
         dPos[1] *= self.curspeed
@@ -363,7 +771,7 @@ class Scene:
         self.player.position += dPos
     
     def spin_player(self, dTheta, dPhi):
-
+        
         self.player.theta += dTheta
         if self.player.theta > 360:
             self.player.theta -= 360
@@ -397,7 +805,13 @@ class App:
     
     def mainLoop(self):
         pg.mixer.init()
-        walkSound = pg.mixer.Sound('sounds/walkingOnWoodSound.mp3')
+
+        #I really hate doing this but I need to
+        walkSoundw = pg.mixer.Sound('sounds/walkingOnWoodSound.mp3')
+        walkSounda = pg.mixer.Sound('sounds/walkingOnWoodSound.mp3')
+        walkSounds = pg.mixer.Sound('sounds/walkingOnWoodSound.mp3')
+        walkSoundd = pg.mixer.Sound('sounds/walkingOnWoodSound.mp3')
+        
         backroundSounds = pg.mixer.Sound('sounds/LightBuzz.mp3')
         backroundSounds.play(-1)
         backroundSounds.set_volume(0.008)
@@ -412,19 +826,54 @@ class App:
                 if event.type == pg.KEYDOWN:
                     if event.key == pg.K_ESCAPE:
                         running = False
-                    if event.key == pg.K_w or event.key == pg.K_a or event.key == pg.K_d or event.key == pg.K_s:
+                    if event.key == pg.K_w:
                         
-                        walkSound.play(-1)
+                        walkSoundw.play(-1)
 
-                        walkSound.set_volume(0.025)
+                        walkSoundw.set_volume(0.025)
+                    if event.key == pg.K_a:
+                        
+                        walkSounda.play(-1)
+
+                        walkSounda.set_volume(0.025)
+                    if event.key == pg.K_s:
+                        
+                        walkSounds.play(-1)
+
+                        walkSounds.set_volume(0.025)
+                    if event.key == pg.K_d:
+                        
+                        walkSoundd.play(-1)
+
+                        walkSoundd.set_volume(0.025)
+
+                    
+
+                    
 
                 
             pressed_keys = pg.key.get_pressed()
-            if not pressed_keys[pg.K_w] and not pressed_keys[pg.K_s] and not pressed_keys[pg.K_a] and not pressed_keys[pg.K_d]:
+            if not pressed_keys[pg.K_w]:
                         
-                walkSound.stop()
+                walkSoundw.stop()
 
-                walkSound.set_volume(0.025)
+                walkSoundw.set_volume(0.025)
+
+            if not pressed_keys[pg.K_a]:
+                        
+                walkSounda.stop()
+
+                walkSounda.set_volume(0.025)
+            if not pressed_keys[pg.K_s]:
+                        
+                walkSounds.stop()
+
+                walkSounds.set_volume(0.025)
+            if not pressed_keys[pg.K_d]:
+                        
+                walkSoundd.stop()
+
+                walkSoundd.set_volume(0.025)
                 
                
             
@@ -507,165 +956,7 @@ class App:
         
         self.renderer.destroy()
 
-class GraphicsEngine:
 
-    @lru_cache(maxsize=None)
-    def __init__(self):
-
-        #initialise pygame
-        pg.init()
-        
-        pg.mouse.set_visible(False)
-        pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
-        pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
-        pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK,
-                                    pg.GL_CONTEXT_PROFILE_CORE)
-        #window
-        pg.display.set_mode((1200,800), pg.OPENGL|pg.DOUBLEBUF)
-
-
-        
-        #initialise opengl
-        glClearColor(0.0, 0.0, 0.0, 1)
-        
-        glEnable(GL_DEPTH_TEST)
-        #glEnable(GL_CULL_FACE)
-        #glCullFace(GL_BACK)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-        #create renderpasses and resources
-        shader = self.createShader("shaders/vertex.txt", "shaders/fragment.txt")
-        self.texturedLitPass = RenderPassTexturedLit3D(shader)
-
-        #MESH
-        self.wall = Mesh("models/wallfull.obj", 1, 4)
-        self.wallbounds = Mesh("models/wallbounds.obj", 1, 4)
-        self.floor = Mesh("models/floor2.obj", 1, 200)
-        self.ceilingFloor = Mesh("models/floor2.obj", 1, 70) 
-        self.monkey = Mesh("models/wallfull.obj", 1, 4)        
-        self.poster = Mesh("models/posterObj.obj", 0.3, 2.75)
-        self.table = Mesh("models/table.obj", 0.8, 4)
-
-        self.bacteriaman = Mesh("models/bacteria man.obj", .3, 1)
-
-        self.doorpart1 = Mesh("models/doorpart1.obj", 0.5, 4)
-        self.doorpart2 = Mesh("models/doorpart2.obj", 0.5, 4)
-        self.doorpart3 = Mesh("models/doorpart3.obj", 0.5, 4)
-        
-        #TEXTURES
-        self.walltexture = Material("gfx/Leather035C_2K_Color.jpg")
-        self.floortexture = Material("gfx/wood2.jpg")
-        self.floorbtexture = Material("gfx/woodb.jpg")
-        self.medkit_texture = Material("gfx/woodrte.jpg")
-        self.ceilingg = Material("gfx/ofce.jpg")
-        self.bacteriamantexture = Material("gfx/BacteriaManTexture.png") 
-        self.posterTexture = Material("gfx/pos1 (2).png")
-
-        self.doorpart3Tex = Material("gfx/cone.jpg")
-        self.doorpart2Tex = Material("gfx/lev.jpg") 
-        self.doorpart2wTex = Material("gfx/lev.jpg") 
-
-        #BILLBOARDS
-        self.medkit_billboard = BillBoard(w = 0.6, h = 0.5)
-       
-        
-        shader = self.createShader("shaders/vertex_light.txt", "shaders/fragment_light.txt")
-        self.texturedPass = RenderPassTextured3D(shader)
-        self.light_texture = Material("gfx/lightPlaceHolder.png")
-        self.light_billboard = BillBoard(w = 0.2, h = 0.1)
-        global bacteriamanobject
-        bacteriamanobject = SimpleComponent(mesh = self.bacteriaman, tex = self.bacteriamantexture ,position = [0,-12.4,-5.8], eulers = [270,0,90])
-        global NonScriptableObjects
-        global maplevel
-        if maplevel == 0:
-            NonScriptableObjects = [SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [3.7,0,-5.8], eulers = [90,0,0]),
-            SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-3.7,0,-5.8], eulers = [90,0,0]),
-            SimpleComponent(mesh = self.floor, tex = self.floortexture ,position = [0,0,-9], eulers = [90,0,0]),
-            SimpleComponent(mesh = self.ceilingFloor, tex = self.ceilingg ,position = [0,0,-2.5], eulers = [90,0,0]),
-            SimpleComponent(mesh = self.poster, tex = self.posterTexture ,position = [2,8.6,-5.8], eulers = [-90,-90, 0]),
-            SimpleComponent(mesh = self.table, tex = self.floorbtexture ,position = [2,7.7,-7.8], eulers = [-90,0, 90]),
-
-            
-            SimpleComponent(mesh = self.doorpart1, tex = self.floorbtexture ,position = [-2,-2.9,-6.62], eulers = [90,0,90]),
-            SimpleComponent(mesh = self.doorpart2, tex = self.doorpart2Tex ,position = [-2.1,-2.8,-6.62], eulers = [90,0,90]),
-            SimpleComponent(mesh = self.doorpart3, tex = self.doorpart3Tex ,position = [-2,-2.9,-6.62], eulers = [90,0,90]),
-            SimpleComponent(mesh = self.doorpart2, tex = self.doorpart2wTex ,position = [-1.4,-2.8,-6.62], eulers = [90,0,90]),
-            
-
-            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-3.7,0,-5.8], eulers = [90,0,0]),
-            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [3.7,0,-5.8], eulers = [90,0,0]),
-
-            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [-3.7, 6.9,-5.8], eulers = [90,0,0]),
-            SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [-3.7,6.9,-5.8], eulers = [90,0,0]),
-            
-            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [3.7, 6.9,-5.8], eulers = [90,0,0]),
-            SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [3.7,6.9,-5.8], eulers = [90,0,0]),
-            
-            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, 9,-5.8], eulers = [90,0,90]),
-            SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,9,-5.8], eulers = [90,0,90]),
-            
-            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, -3.4,-5.8], eulers = [90,0,90]),
-            SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,-3.4,-5.8], eulers = [90,0,90]),
-
-            SimpleComponent(mesh = self.wallbounds, tex = self.floorbtexture ,position = [0, -1,-5.8], eulers = [90,0,0]),
-            SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [0,-1,-5.8], eulers = [90,0,0]),
-
-
-        bacteriamanobject
-        ]
-        
-
-        
-    @lru_cache(maxsize=None)
-    def createShader(self, vertexFilepath, fragmentFilepath):
-
-        with open(vertexFilepath,'r') as f:
-            vertex_src = f.readlines()
-
-        with open(fragmentFilepath,'r') as f:
-            fragment_src = f.readlines()
-        
-        shader = compileProgram(compileShader(vertex_src, GL_VERTEX_SHADER),
-                                compileShader(fragment_src, GL_FRAGMENT_SHADER))
-        
-        return shader
-    
-    def render(self, scene):
-
-        #refresh screen
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
-        self.texturedLitPass.render(scene, self)
-
-        self.texturedPass.render(scene, self)
-
-        pg.display.flip()
-
-    
-    def destroy(self):
-        self.doorpart1.destroy()
-        self.doorpart2.destroy()
-        self.doorpart2.destroy()
-        self.doorpart3Tex.destroy()
-        self.doorpart2Tex.destroy()
-        self.doorpart2wTex.destroy()
-        self.poster.destroy()
-        self.table.destroy()
-        self.posterTexture.destroy()
-        self.floor.destroy()
-        self.ceilingg.destroy()
-        self.floorbtexture.destroy()
-        self.walltexture.destroy()
-        self.medkit_billboard.destroy()
-        self.medkit_texture.destroy()
-        self.light_billboard.destroy()
-        self.light_texture.destroy()
-        self.texturedLitPass.destroy()
-        self.texturedPass.destroy()
-        self.bacteriaman.destroy()
-        self.bacteriamantexture.destroy()
-        pg.quit()
 
 
 #load the music
@@ -675,128 +966,7 @@ class GraphicsEngine:
 #buzz.play()
 
 #buzz.set_volume(0.008)
-class RenderPassTexturedLit3D:
 
-    @lru_cache(maxsize=None)
-    def __init__(self, shader):
-
-        #initialise opengl
-        self.shader = shader
-        glUseProgram(self.shader)
-        glUniform1i(glGetUniformLocation(self.shader, "imageTexture"), 0)
-
-        projection_transform = pyrr.matrix44.create_perspective_projection(
-            fovy = 60, aspect = 640/480, 
-            near = 0.1, far = 50, dtype=np.float32
-        )
-        glUniformMatrix4fv(
-            glGetUniformLocation(self.shader,"projection"),
-            1, GL_FALSE, projection_transform
-        )
-        self.modelMatrixLocation = glGetUniformLocation(self.shader, "model")
-        self.viewMatrixLocation = glGetUniformLocation(self.shader, "view")
-        self.lightLocation = {
-            "position": [
-                glGetUniformLocation(self.shader, f"Lights[{i}].position")
-                for i in range(20)
-            ],
-            "color": [
-                glGetUniformLocation(self.shader, f"Lights[{i}].color")
-                for i in range(20)
-            ],
-            "strength": [
-                glGetUniformLocation(self.shader, f"Lights[{i}].strength")
-                for i in range(20)
-            ]
-        }
-        self.cameraPosLoc = glGetUniformLocation(self.shader, "cameraPostion")
-    #cant cache
-    
-    def render(self, scene, engine):
-        
-        def createNonObjects():
-            
-            for nonscriptname in NonScriptableObjects:
-                
-                model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
-                model_transform = pyrr.matrix44.multiply(
-                    m1=model_transform, 
-                    m2=pyrr.matrix44.create_from_eulers(
-                        eulers=np.radians(nonscriptname.eulers), dtype=np.float32
-                    )
-                )
-                model_transform = pyrr.matrix44.multiply(
-                    m1=model_transform, 
-                    m2=pyrr.matrix44.create_from_translation(
-                        vec=np.array(nonscriptname.position),dtype=np.float32
-                    )
-                )
-                glUniformMatrix4fv(self.modelMatrixLocation,1,GL_FALSE,model_transform)
-                nonscriptname.tex.use()
-                glBindVertexArray(nonscriptname.mesh.vao)
-                glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
-        
-        glUseProgram(self.shader)
-
-        view_transform = pyrr.matrix44.create_look_at(
-            eye = scene.player.position,
-            target = scene.player.position + scene.player.forwards,
-            up = scene.player.up, dtype = np.float32
-        )
-        glUniformMatrix4fv(self.viewMatrixLocation, 1, GL_FALSE, view_transform)
-
-        glUniform3fv(self.cameraPosLoc, 1, scene.player.position)
-
-        for i,light in enumerate(scene.lights):
-            glUniform3fv(self.lightLocation["position"][i], 1, light.position)
-            glUniform3fv(self.lightLocation["color"][i], 1, light.color)
-            glUniform1f(self.lightLocation["strength"][i], light.strength)
-       
-        #NonScriptableObjects = [SimpleComponent(mesh = engine.ca,position = [6,0,1], eulers = [0,0,0]),]
-        #def createNonObjects():
-        
-        
-        createNonObjects()
-        
-        
-        
-        
-
-
-        
-        for medkit in scene.medkits:
-
-            engine.medkit_texture.use()
-
-            directionFromPlayer = medkit.position - scene.player.position
-            wallpos = medkit.position
-            angle1 = np.arctan2(-directionFromPlayer[1],directionFromPlayer[0])
-            dist2d = math.sqrt(directionFromPlayer[0] ** 2 + directionFromPlayer[1] ** 2)
-            angle2 = np.arctan2(directionFromPlayer[2],dist2d)
-
-            model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
-            model_transform = pyrr.matrix44.multiply(
-                model_transform,
-                pyrr.matrix44.create_from_y_rotation(theta=angle2, dtype=np.float32)
-            )
-            model_transform = pyrr.matrix44.multiply(
-                model_transform,
-                pyrr.matrix44.create_from_z_rotation(theta=angle1, dtype=np.float32)
-            )
-            model_transform = pyrr.matrix44.multiply(
-                model_transform,
-                pyrr.matrix44.create_from_translation(medkit.position,dtype=np.float32)
-            )
-            glUniformMatrix4fv(glGetUniformLocation(self.shader,"model"),1,GL_FALSE,model_transform)
-
-
-            glBindVertexArray(engine.medkit_billboard.vao)
-            glDrawArrays(GL_TRIANGLES, 0, engine.medkit_billboard.vertexCount)
-   
-    def destroy(self):
-        
-        
-        glDeleteProgram(self.shader)
 
 class RenderPassTextured3D:
 
