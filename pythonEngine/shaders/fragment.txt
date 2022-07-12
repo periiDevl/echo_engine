@@ -32,7 +32,7 @@ void main()
     float alpha = texture(material.albedo, fragmentTexCoord).a;
     
     //ambient
-    vec3 lightLevel = 0.4 * vec3(texture(material.albedo, fragmentTexCoord)) * texture(material.ao, fragmentTexCoord).rgb;
+    vec3 lightLevel = 0.2 * vec3(texture(material.albedo, fragmentTexCoord)) * texture(material.ao, fragmentTexCoord).rgb;
 
     for (int i = 0; i < 8; i++) {
         float distance = length(fragmentLightPos[i] - fragmentPos);

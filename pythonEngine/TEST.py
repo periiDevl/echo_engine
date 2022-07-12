@@ -5,6 +5,8 @@ import numpy as np
 import pyrr
 import math
 
+####################### Model #################################################
+
 class SimpleComponent:
 
 
@@ -148,14 +150,16 @@ class Scene:
         self.lights = [
             BrightBillboard(
                 position = [
-                    1.0, 
-                    1, 
+                    4.0, 
+                    -4.0 + i, 
                     1.0
                 ],
                 color = [
-                    1,1,1
+                    np.random.uniform(low=0.0, high=1.0), 
+                    np.random.uniform(low=0.0, high=1.0), 
+                    np.random.uniform(low=0.0, high=1.0)
                 ],
-                strength = 10
+                strength = 3
             )
             for i in range(8)
         ]
@@ -193,6 +197,8 @@ class Scene:
         self.player.phi = min(
             89, max(-89, self.player.phi + dPhi)
         )
+
+####################### Control ###############################################
 
 class App:
 
@@ -306,7 +312,8 @@ class App:
         delta = self.currentTime - self.lastTime
         if (delta >= 1000):
             framerate = max(1,int(1000.0 * self.numFrames/delta))
-            pg.display.set_caption(f"Running at {framerate} fps.")
+            #pg.display.set_caption(f"Running at {framerate} fps.")
+            self.renderer.update_fps(framerate)
             self.lastTime = self.currentTime
             self.numFrames = -1
             self.frameTime = float(1000.0 / max(1,framerate))
@@ -315,6 +322,8 @@ class App:
     def quit(self):
         
         self.renderer.destroy()
+
+####################### View  #################################################
 
 class GraphicsEngine:
 
@@ -339,7 +348,7 @@ class GraphicsEngine:
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        self.create_framebuffer()
+        self.create_framebuffers()
 
         self.setup_shaders()
 
@@ -347,35 +356,40 @@ class GraphicsEngine:
 
         self.create_assets()
     
-    def create_framebuffer(self):
-        self.fbo = glGenFramebuffers(1)
-        glBindFramebuffer(GL_FRAMEBUFFER, self.fbo)
+    def create_framebuffers(self):
+        self.fbos = []
+        self.colorBuffers = []
+        self.depthStencilBuffers = []
+        for i in range(2):
+            self.fbos.append(glGenFramebuffers(1))
+            glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[i])
         
-        self.colorBuffer = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, self.colorBuffer)
-        glTexImage2D(
-            GL_TEXTURE_2D, 0, GL_RGB, 
-            self.screenWidth, self.screenHeight,
-            0, GL_RGB, GL_UNSIGNED_BYTE, None
-        )
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glBindTexture(GL_TEXTURE_2D, 0)
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
-                                GL_TEXTURE_2D, self.colorBuffer, 0)
-        
-        self.depthStencilBuffer = glGenRenderbuffers(1)
-        glBindRenderbuffer(GL_RENDERBUFFER, self.depthStencilBuffer)
-        glRenderbufferStorage(
-            GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, self.screenWidth, self.screenHeight
-        )
-        glBindRenderbuffer(GL_RENDERBUFFER,0)
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, 
-                                    GL_RENDERBUFFER, self.depthStencilBuffer)
+            self.colorBuffers.append(glGenTextures(1))
+            glBindTexture(GL_TEXTURE_2D, self.colorBuffers[i])
+            glTexImage2D(
+                GL_TEXTURE_2D, 0, GL_RGB, 
+                self.screenWidth, self.screenHeight,
+                0, GL_RGB, GL_UNSIGNED_BYTE, None
+            )
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+            glBindTexture(GL_TEXTURE_2D, 0)
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
+                                    GL_TEXTURE_2D, self.colorBuffers[i], 0)
+            
+            self.depthStencilBuffers.append(glGenRenderbuffers(1))
+            glBindRenderbuffer(GL_RENDERBUFFER, self.depthStencilBuffers[i])
+            glRenderbufferStorage(
+                GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, self.screenWidth, self.screenHeight
+            )
+            glBindRenderbuffer(GL_RENDERBUFFER,0)
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, 
+                                        GL_RENDERBUFFER, self.depthStencilBuffers[i])
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+            glBindFramebuffer(GL_FRAMEBUFFER, 0)
+    
     def setup_shaders(self):
 
         projection_transform = pyrr.matrix44.create_perspective_projection(
@@ -401,13 +415,18 @@ class GraphicsEngine:
             1, GL_FALSE, projection_transform
         )
 
-        self.post_shader = self.createShader("shaders/simple_post_vertex.txt", "shaders/post_processing_fragment.txt")
+        self.post_shader = self.createShader("shaders/simple_post_vertex.txt", "shaders/post_fragment.txt")
+
+        self.crt_shader = self.createShader("shaders/simple_post_vertex.txt", "shaders/crt_fragment.txt")
+
+        self.screen_shader = self.createShader("shaders/simple_post_vertex.txt", "shaders/screen_fragment.txt")
 
     def query_shader_locations(self):
 
         #attributes shared by both shaders
         self.modelMatrixLocation = {}
         self.viewMatrixLocation = {}
+        self.tintLoc = {}
 
         glUseProgram(self.lighting_shader)
         self.modelMatrixLocation["lit"] = glGetUniformLocation(self.lighting_shader, "model")
@@ -431,14 +450,17 @@ class GraphicsEngine:
         glUseProgram(self.unlit_shader)
         self.modelMatrixLocation["unlit"] = glGetUniformLocation(self.unlit_shader, "model")
         self.viewMatrixLocation["unlit"] = glGetUniformLocation(self.unlit_shader, "view")
-        self.tintLoc = glGetUniformLocation(self.unlit_shader, "tint")
+        self.tintLoc["unlit"] = glGetUniformLocation(self.unlit_shader, "tint")
+
+        glUseProgram(self.screen_shader)
+        self.tintLoc["screen"] = glGetUniformLocation(self.screen_shader, "tint")
 
     def create_assets(self):
 
         glUseProgram(self.lighting_shader)
         self.wood_texture = AdvancedMaterial("moss", "bmp")
-        self.cube_mesh = Mesh("models/sphere.obj")
-        self.medkit_texture = AdvancedMaterial("moss", 'bmp')
+        self.cube_mesh = Mesh("models/monkey.obj")
+        #self.medkit_texture = AdvancedMaterial("medkit")
         self.medkit_billboard = BillBoard(w = 0.6, h = 0.5)
 
         glUseProgram(self.unlit_shader)
@@ -446,6 +468,9 @@ class GraphicsEngine:
         self.light_billboard = BillBoard(w = 0.2, h = 0.1)
 
         self.screen = TexturedQuad(0, 0, 1, 1)
+
+        self.font = Font()
+        self.fps_label = TextLine("FPS: ", self.font, (-0.9, 0.9), (0.05, 0.05))
     
     def createShader(self, vertexFilepath, fragmentFilepath):
 
@@ -456,14 +481,19 @@ class GraphicsEngine:
             fragment_src = f.readlines()
         
         shader = compileProgram(compileShader(vertex_src, GL_VERTEX_SHADER),
-                                compileShader(fragment_src, GL_FRAGMENT_SHADER))
+                                compileShader(fragment_src, GL_FRAGMENT_SHADER),
+                            )
         
         return shader
 
-    def render(self, scene):
+    def update_fps(self, new_fps):
 
+        self.fps_label.build_text(f"FPS: {new_fps}", self.font)
+    
+    def render(self, scene):
+        
         #First pass
-        glBindFramebuffer(GL_FRAMEBUFFER, self.fbo)
+        glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[0])
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glEnable(GL_DEPTH_TEST)
 
@@ -485,7 +515,7 @@ class GraphicsEngine:
             glUniformMatrix4fv(self.modelMatrixLocation["lit"],1,GL_FALSE,cube.modelTransform)
             glDrawArrays(GL_TRIANGLES, 0, self.cube_mesh.vertex_count)
         
-        self.medkit_texture.use()
+        #self.medkit_texture.use()
         glBindVertexArray(self.medkit_billboard.vao)
         for medkit in scene.medkits:
             glUniformMatrix4fv(self.modelMatrixLocation["lit"],1,GL_FALSE,medkit.modelTransform)
@@ -500,18 +530,53 @@ class GraphicsEngine:
         glBindVertexArray(self.light_billboard.vao)
         for i,light in enumerate(scene.lights):
 
-            glUniform3fv(self.tintLoc, 1, light.color)
+            glUniform3fv(self.tintLoc["unlit"], 1, light.color)
             glUniformMatrix4fv(self.modelMatrixLocation["unlit"],1,GL_FALSE,light.modelTransform)
             glDrawArrays(GL_TRIANGLES, 0, self.light_billboard.vertexCount)
         
-        #Second pass
-        
+        #Post processing pass
+        glUseProgram(self.screen_shader)
+        glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[0])
+        glDisable(GL_DEPTH_TEST)
+
+        glUniform4fv(self.tintLoc["screen"], 1, np.array([1.0, 0.0, 0.0, 1.0], dtype = np.float32))
+        self.font.use()
+        glBindVertexArray(self.fps_label.vao)
+        glDrawArrays(GL_TRIANGLES, 0, self.fps_label.vertex_count)
+
+        """
+        #Blit color buffer 1 onto color buffer 0
+        glUseProgram(self.screen_shader)
+        glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[0])
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glDisable(GL_DEPTH_TEST)
+
+
+        glBindTexture(GL_TEXTURE_2D, self.colorBuffers[1])
+        glActiveTexture(GL_TEXTURE0)
+        glBindVertexArray(self.screen.vao)
+        glDrawArrays(GL_TRIANGLES, 0, self.screen.vertex_count)
+        """
+
+        #CRT emulation pass
         glUseProgram(self.post_shader)
+        glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[1])
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glDisable(GL_DEPTH_TEST)
+
+        glBindTexture(GL_TEXTURE_2D, self.colorBuffers[0])
+        glActiveTexture(GL_TEXTURE0)
+        glBindVertexArray(self.screen.vao)
+        glDrawArrays(GL_TRIANGLES, 0, self.screen.vertex_count)
+        
+        #Put the final result on screen
+        glUseProgram(self.screen_shader)
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glDisable(GL_DEPTH_TEST)
 
-        glBindTexture(GL_TEXTURE_2D, self.colorBuffer)
+        glUniform4fv(self.tintLoc["screen"], 1, np.array([1.0, 1.0, 1.0, 1.0], dtype = np.float32))
+        glBindTexture(GL_TEXTURE_2D, self.colorBuffers[1])
         glActiveTexture(GL_TEXTURE0)
         glBindVertexArray(self.screen.vao)
         glDrawArrays(GL_TRIANGLES, 0, self.screen.vertex_count)
@@ -523,17 +588,18 @@ class GraphicsEngine:
         self.cube_mesh.destroy()
         self.wood_texture.destroy()
         self.medkit_billboard.destroy()
-        self.medkit_texture.destroy()
+        #self.medkit_texture.destroy()
         self.light_billboard.destroy()
         self.light_texture.destroy()
+        self.font.destroy()
+        self.fps_label.destroy()
         glDeleteProgram(self.lighting_shader)
         glDeleteProgram(self.unlit_shader)
         glDeleteProgram(self.post_shader)
-        glDeleteTextures(1, [self.colorBuffer,])
-        glDeleteRenderbuffers(1, [self.depthStencilBuffer,])
-        glDeleteFramebuffers(1, [self.fbo,])
+        glDeleteTextures(len(self.colorBuffers), self.colorBuffers)
+        glDeleteRenderbuffers(len(self.depthStencilBuffers), self.depthStencilBuffers)
+        glDeleteFramebuffers(len(self.fbos), self.fbos)
         pg.quit()
-
 
 class Mesh:
 
@@ -709,7 +775,7 @@ class Material:
 class AdvancedMaterial:
 
     
-    def __init__(self, fileroot, fileype):
+    def __init__(self, fileroot, type):
 
         #albedo
         self.albedoTexture = glGenTextures(1)
@@ -718,7 +784,7 @@ class AdvancedMaterial:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        image = pg.image.load(f"gfx/{fileroot}_albedo." + fileype).convert_alpha()
+        image = pg.image.load(f"gfx/{fileroot}_albedo." + type).convert_alpha()
         image_width,image_height = image.get_rect().size
         img_data = pg.image.tostring(image,'RGBA')
         glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,image_width,image_height,0,GL_RGBA,GL_UNSIGNED_BYTE,img_data)
@@ -731,7 +797,7 @@ class AdvancedMaterial:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        image = pg.image.load(f"gfx/{fileroot}_ao." + fileype).convert_alpha()
+        image = pg.image.load(f"gfx/{fileroot}_ao." + type).convert_alpha()
         image_width,image_height = image.get_rect().size
         img_data = pg.image.tostring(image,'RGBA')
         glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,image_width,image_height,0,GL_RGBA,GL_UNSIGNED_BYTE,img_data)
@@ -744,7 +810,7 @@ class AdvancedMaterial:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        image = pg.image.load(f"gfx/{fileroot}_glossmap." + fileype).convert_alpha()
+        image = pg.image.load(f"gfx/{fileroot}_glossmap." + type).convert_alpha()
         image_width,image_height = image.get_rect().size
         img_data = pg.image.tostring(image,'RGBA')
         glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,image_width,image_height,0,GL_RGBA,GL_UNSIGNED_BYTE,img_data)
@@ -757,7 +823,7 @@ class AdvancedMaterial:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        image = pg.image.load(f"gfx/{fileroot}_normal." + fileype).convert_alpha()
+        image = pg.image.load(f"gfx/{fileroot}_normal." + type).convert_alpha()
         image_width,image_height = image.get_rect().size
         img_data = pg.image.tostring(image,'RGBA')
         glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,image_width,image_height,0,GL_RGBA,GL_UNSIGNED_BYTE,img_data)
@@ -826,6 +892,7 @@ class BillBoard:
     def destroy(self):
         glDeleteVertexArrays(1, (self.vao,))
         glDeleteBuffers(1, (self.vbo,))
+
 class TexturedQuad:
 
 
@@ -858,4 +925,176 @@ class TexturedQuad:
     def destroy(self):
         glDeleteVertexArrays(1, (self.vao,))
         glDeleteBuffers(1, (self.vbo,))
+
+class Font:
+
+    def __init__(self):
+
+         #some parameters for fine tuning.
+        w = 55.55 / 1000.0
+        h =  63.88 / 1150.0
+        heightOffset = 8.5 / 1150.0
+        margin = 0.014
+
+        """
+            Letter: (left, top, width, height)
+        """
+        self.letterTexCoords = {
+            'A': (       w, 1.0 - h,                          w - margin, h - margin), 'B': ( 3.0 * w, 1.0 - h,                          w - margin, h - margin),
+            'C': ( 5.0 * w, 1.0 - h,                          w - margin, h - margin), 'D': ( 7.0 * w, 1.0 - h,                          w - margin, h - margin),
+            'E': ( 9.0 * w, 1.0 - h,                          w - margin, h - margin), 'F': (11.0 * w, 1.0 - h,                          w - margin, h - margin),
+            'G': (13.0 * w, 1.0 - h,                          w - margin, h - margin), 'H': (15.0 * w, 1.0 - h,                          w - margin, h - margin),
+            'I': (17.0 * w, 1.0 - h,                          w - margin, h - margin), 'J': (       w, 1.0 - 3.0 * h + heightOffset,     w - margin, h - margin),
+            'K': ( 3.0 * w, 1.0 - 3.0 * h + heightOffset,     w - margin, h - margin), 'L': ( 5.0 * w, 1.0 - 3.0 * h + heightOffset,     w - margin, h - margin),
+            'M': ( 7.0 * w, 1.0 - 3.0 * h + heightOffset,     w - margin, h - margin), 'N': ( 9.0 * w, 1.0 - 3.0 * h + heightOffset,     w - margin, h - margin),
+            'O': (11.0 * w, 1.0 - 3.0 * h + heightOffset,     w - margin, h - margin), 'P': (13.0 * w, 1.0 - 3.0 * h + heightOffset,     w - margin, h - margin),
+            'Q': (15.0 * w, 1.0 - 3.0 * h + heightOffset,     w - margin, h - margin), 'R': (17.0 * w, 1.0 - 3.0 * h + heightOffset,     w - margin, h - margin),
+            'S': (       w, 1.0 - 5.0 * h + 2 * heightOffset, w - margin, h - margin), 'T': ( 3.0 * w, 1.0 - 5.0 * h + 2 * heightOffset, w - margin, h - margin),
+            'U': ( 5.0 * w, 1.0 - 5.0 * h + 2 * heightOffset, w - margin, h - margin), 'V': ( 7.0 * w, 1.0 - 5.0 * h + 2 * heightOffset, w - margin, h - margin),
+            'W': ( 9.0 * w, 1.0 - 5.0 * h + 2 * heightOffset, w - margin, h - margin), 'X': (11.0 * w, 1.0 - 5.0 * h + 2 * heightOffset, w - margin, h - margin),
+            'Y': (13.0 * w, 1.0 - 5.0 * h + 2 * heightOffset, w - margin, h - margin), 'Z': (15.0 * w, 1.0 - 5.0 * h + 2 * heightOffset, w - margin, h - margin),
+
+            'a': (       w,                     1.0 - 7.0 * h, w - margin, h - margin), 'b': ( 3.0 * w,         1.0 - 7.0 * h, w - margin, h - margin),
+            'c': ( 5.0 * w,                     1.0 - 7.0 * h, w - margin, h - margin), 'd': ( 7.0 * w,         1.0 - 7.0 * h, w - margin, h - margin),
+            'e': ( 9.0 * w,                     1.0 - 7.0 * h, w - margin, h - margin), 'f': (11.0 * w,         1.0 - 7.0 * h, w - margin, h - margin),
+            'g': (13.0 * w,                     1.0 - 7.0 * h, w - margin, h - margin), 'h': (15.0 * w,         1.0 - 7.0 * h, w - margin, h - margin),
+            'i': (17.0 * w,                     1.0 - 7.0 * h, w - margin, h - margin), 'j': (       w,      1.0 - 9.0 * h + heightOffset, w - margin, h - margin),
+            'k': ( 3.0 * w,      1.0 - 9.0 * h + heightOffset, w - margin, h - margin), 'l': ( 5.0 * w,      1.0 - 9.0 * h + heightOffset, w - margin, h - margin),
+            'm': ( 7.0 * w,      1.0 - 9.0 * h + heightOffset, w - margin, h - margin), 'n': ( 9.0 * w,      1.0 - 9.0 * h + heightOffset, w - margin, h - margin),
+            'o': (11.0 * w,      1.0 - 9.0 * h + heightOffset, w - margin, h - margin), 'p': (13.0 * w,      1.0 - 9.0 * h + heightOffset, w - margin, h - margin),
+            'q': (15.0 * w,      1.0 - 9.0 * h + heightOffset, w - margin, h - margin), 'r': (17.0 * w,      1.0 - 9.0 * h + heightOffset, w - margin, h - margin),
+            's': (       w, 1.0 - 11.0 * h + 2 * heightOffset, w - margin, h - margin), 't': ( 3.0 * w, 1.0 - 11.0 * h + 2 * heightOffset, w - margin, h - margin),
+            'u': ( 5.0 * w, 1.0 - 11.0 * h + 2 * heightOffset, w - margin, h - margin), 'v': ( 7.0 * w, 1.0 - 11.0 * h + 2 * heightOffset, w - margin, h - margin),
+            'w': ( 9.0 * w, 1.0 - 11.0 * h + 2 * heightOffset, w - margin, h - margin), 'x': (11.0 * w, 1.0 - 11.0 * h + 2 * heightOffset, w - margin, h - margin),
+            'y': (13.0 * w, 1.0 - 11.0 * h + 2 * heightOffset, w - margin, h - margin), 'z': (15.0 * w, 1.0 - 11.0 * h + 2 * heightOffset, w - margin, h - margin),
+
+            '0': (       w, 1.0 - 13.0 * h, w - margin, h - margin), '1':  ( 3.0 * w,                1.0 - 13.0 * h, w - margin, h - margin),
+            '2': ( 5.0 * w, 1.0 - 13.0 * h, w - margin, h - margin), '3':  ( 7.0 * w,                1.0 - 13.0 * h, w - margin, h - margin),
+            '4': ( 9.0 * w, 1.0 - 13.0 * h, w - margin, h - margin), '5':  (11.0 * w,                1.0 - 13.0 * h, w - margin, h - margin),
+            '6': (13.0 * w, 1.0 - 13.0 * h, w - margin, h - margin), '7':  (15.0 * w,                1.0 - 13.0 * h, w - margin, h - margin),
+            '8': (17.0 * w, 1.0 - 13.0 * h, w - margin, h - margin), '9':  (       w, 1.0 - 15.0 * h + heightOffset, w - margin, h - margin),
+            
+            '.':  ( 3.0 * w,     1.0 - 15.0 * h + heightOffset, w - margin, h - margin), ',': ( 5.0 * w,     1.0 - 15.0 * h + heightOffset, w - margin, h - margin),
+            ';':  ( 7.0 * w,     1.0 - 15.0 * h + heightOffset, w - margin, h - margin), ':': ( 9.0 * w,     1.0 - 15.0 * h + heightOffset, w - margin, h - margin),
+            '$':  (11.0 * w,     1.0 - 15.0 * h + heightOffset, w - margin, h - margin), '#': (13.0 * w,     1.0 - 15.0 * h + heightOffset, w - margin, h - margin),
+            '\'': (15.0 * w,     1.0 - 15.0 * h + heightOffset, w - margin, h - margin), '!': (17.0 * w,     1.0 - 15.0 * h + heightOffset, w - margin, h - margin),
+            '"':  (       w, 1.0 - 17.0 * h + 2 * heightOffset, w - margin, h - margin), '/': ( 3.0 * w, 1.0 - 17.0 * h + 2 * heightOffset, w - margin, h - margin),
+            '?':  ( 5.0 * w, 1.0 - 17.0 * h + 2 * heightOffset, w - margin, h - margin), '%': ( 7.0 * w, 1.0 - 17.0 * h + 2 * heightOffset, w - margin, h - margin),
+            '&':  ( 9.0 * w, 1.0 - 17.0 * h + 2 * heightOffset, w - margin, h - margin), '(': (11.0 * w, 1.0 - 17.0 * h + 2 * heightOffset, w - margin, h - margin),
+            ')':  (13.0 * w, 1.0 - 17.0 * h + 2 * heightOffset, w - margin, h - margin), '@': (15.0 * w, 1.0 - 17.0 * h + 2 * heightOffset, w - margin, h - margin)
+        }
+
+        self.texture = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, self.texture)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        image = pg.image.load("gfx/Inconsolata.png").convert_alpha()
+        image_width,image_height = image.get_rect().size
+        img_data = pg.image.tostring(image,'RGBA')
+        glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,image_width,image_height,0,GL_RGBA,GL_UNSIGNED_BYTE,img_data)
+        glGenerateMipmap(GL_TEXTURE_2D)
+    
+    def get_bounding_box(self, letter):
+
+        if letter in self.letterTexCoords:
+            return self.letterTexCoords[letter]
+        return None
+    
+    def use(self):
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D,self.texture)
+
+    def destroy(self):
+        glDeleteTextures(1, (self.texture,))
+
+class TextLine:
+
+    
+    def __init__(self, initial_text, font, start_position, letter_size):
+
+        self.vao = glGenVertexArrays(1)
+        self.vbo = glGenBuffers(1)
+        self.start_position = start_position
+        self.letter_size = letter_size
+        self.build_text(initial_text, font)
+    
+    def build_text(self, new_text, font):
+
+        self.vertices = []
+        self.vertex_count = 0
+
+        margin_adjustment = 0.96
+
+        for i,letter in enumerate(new_text):
+
+            bounding_box  = font.get_bounding_box(letter)
+            if bounding_box is None:
+                continue
+
+            #top left
+            self.vertices.append(
+                self.start_position[0] - self.letter_size[0] + ((2 - margin_adjustment) * i * self.letter_size[0])
+            )
+            self.vertices.append(self.start_position[1] + self.letter_size[1])
+            self.vertices.append(bounding_box[0] - bounding_box[2])
+            self.vertices.append(bounding_box[1] + bounding_box[3])
+            #top right
+            self.vertices.append(
+                self.start_position[0] + self.letter_size[0] + ((2 - margin_adjustment) * i * self.letter_size[0])
+            )
+            self.vertices.append(self.start_position[1] + self.letter_size[1])
+            self.vertices.append(bounding_box[0] + bounding_box[2])
+            self.vertices.append(bounding_box[1] + bounding_box[3])
+            #bottom right
+            self.vertices.append(
+                self.start_position[0] + self.letter_size[0] + ((2 - margin_adjustment) * i * self.letter_size[0])
+            )
+            self.vertices.append(self.start_position[1] - self.letter_size[1])
+            self.vertices.append(bounding_box[0] + bounding_box[2])
+            self.vertices.append(bounding_box[1] - bounding_box[3])
+
+            #bottom right
+            self.vertices.append(
+                self.start_position[0] + self.letter_size[0] + ((2 - margin_adjustment) * i * self.letter_size[0])
+            )
+            self.vertices.append(self.start_position[1] - self.letter_size[1])
+            self.vertices.append(bounding_box[0] + bounding_box[2])
+            self.vertices.append(bounding_box[1] - bounding_box[3])
+            #bottom left
+            self.vertices.append(
+                self.start_position[0] - self.letter_size[0] + ((2 - margin_adjustment) * i * self.letter_size[0])
+            )
+            self.vertices.append(self.start_position[1] - self.letter_size[1])
+            self.vertices.append(bounding_box[0] - bounding_box[2])
+            self.vertices.append(bounding_box[1] - bounding_box[3])
+            #top left
+            self.vertices.append(
+                self.start_position[0] - self.letter_size[0] + ((2 - margin_adjustment) * i * self.letter_size[0])
+            )
+            self.vertices.append(self.start_position[1] + self.letter_size[1])
+            self.vertices.append(bounding_box[0] - bounding_box[2])
+            self.vertices.append(bounding_box[1] + bounding_box[3])
+
+            self.vertex_count += 6
+
+        self.vertices = np.array(self.vertices, dtype=np.float32)
+
+        glBindVertexArray(self.vao)
+        glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
+        glBufferData(GL_ARRAY_BUFFER, self.vertices.nbytes, self.vertices, GL_STATIC_DRAW)
+        offset = 0
+        #position
+        glEnableVertexAttribArray(0)
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 16, ctypes.c_void_p(offset))
+        offset += 8
+        #texture
+        glEnableVertexAttribArray(1)
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 16, ctypes.c_void_p(offset))
+    
+    def destroy(self):
+        glDeleteVertexArrays(1, (self.vao,))
+        glDeleteBuffers(1,(self.vbo,))
+
 myApp = App(800,600)

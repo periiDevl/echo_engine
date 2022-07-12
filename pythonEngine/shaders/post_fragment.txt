@@ -77,5 +77,7 @@ vec4 Identity() {
 }
 
 void main() {
-    fragmentColor = 1.5 * Edge(vec3(1, 1, 1));
+    //fragmentColor = 0.5 * Monochrome(vec3(1,1,1)) + 0.5 * Edge(vec3(0,1,0));
+    fragmentColor = Identity();
+    //fragmentColor = vec4(1.0);
 }
