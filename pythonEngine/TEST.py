@@ -339,12 +339,43 @@ class GraphicsEngine:
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
+        self.create_framebuffer()
+
         self.setup_shaders()
 
         self.query_shader_locations()
 
         self.create_assets()
     
+    def create_framebuffer(self):
+        self.fbo = glGenFramebuffers(1)
+        glBindFramebuffer(GL_FRAMEBUFFER, self.fbo)
+        
+        self.colorBuffer = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, self.colorBuffer)
+        glTexImage2D(
+            GL_TEXTURE_2D, 0, GL_RGB, 
+            self.screenWidth, self.screenHeight,
+            0, GL_RGB, GL_UNSIGNED_BYTE, None
+        )
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glBindTexture(GL_TEXTURE_2D, 0)
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
+                                GL_TEXTURE_2D, self.colorBuffer, 0)
+        
+        self.depthStencilBuffer = glGenRenderbuffers(1)
+        glBindRenderbuffer(GL_RENDERBUFFER, self.depthStencilBuffer)
+        glRenderbufferStorage(
+            GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, self.screenWidth, self.screenHeight
+        )
+        glBindRenderbuffer(GL_RENDERBUFFER,0)
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, 
+                                    GL_RENDERBUFFER, self.depthStencilBuffer)
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
     def setup_shaders(self):
 
         projection_transform = pyrr.matrix44.create_perspective_projection(
@@ -369,6 +400,8 @@ class GraphicsEngine:
             glGetUniformLocation(self.unlit_shader,"projection"),
             1, GL_FALSE, projection_transform
         )
+
+        self.post_shader = self.createShader("shaders/simple_post_vertex.txt", "shaders/post_processing_fragment.txt")
 
     def query_shader_locations(self):
 
@@ -411,6 +444,8 @@ class GraphicsEngine:
         glUseProgram(self.unlit_shader)
         self.light_texture = Material("gfx/lightPlaceHolder.png")
         self.light_billboard = BillBoard(w = 0.2, h = 0.1)
+
+        self.screen = TexturedQuad(0, 0, 1, 1)
     
     def createShader(self, vertexFilepath, fragmentFilepath):
 
@@ -427,8 +462,10 @@ class GraphicsEngine:
 
     def render(self, scene):
 
-        #refresh screen
+        #First pass
+        glBindFramebuffer(GL_FRAMEBUFFER, self.fbo)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glEnable(GL_DEPTH_TEST)
 
         #lit shader
         glUseProgram(self.lighting_shader)
@@ -466,6 +503,18 @@ class GraphicsEngine:
             glUniform3fv(self.tintLoc, 1, light.color)
             glUniformMatrix4fv(self.modelMatrixLocation["unlit"],1,GL_FALSE,light.modelTransform)
             glDrawArrays(GL_TRIANGLES, 0, self.light_billboard.vertexCount)
+        
+        #Second pass
+        
+        glUseProgram(self.post_shader)
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glDisable(GL_DEPTH_TEST)
+
+        glBindTexture(GL_TEXTURE_2D, self.colorBuffer)
+        glActiveTexture(GL_TEXTURE0)
+        glBindVertexArray(self.screen.vao)
+        glDrawArrays(GL_TRIANGLES, 0, self.screen.vertex_count)
 
         pg.display.flip()
 
@@ -479,7 +528,12 @@ class GraphicsEngine:
         self.light_texture.destroy()
         glDeleteProgram(self.lighting_shader)
         glDeleteProgram(self.unlit_shader)
+        glDeleteProgram(self.post_shader)
+        glDeleteTextures(1, [self.colorBuffer,])
+        glDeleteRenderbuffers(1, [self.depthStencilBuffer,])
+        glDeleteFramebuffers(1, [self.fbo,])
         pg.quit()
+
 
 class Mesh:
 
@@ -772,5 +826,36 @@ class BillBoard:
     def destroy(self):
         glDeleteVertexArrays(1, (self.vao,))
         glDeleteBuffers(1, (self.vbo,))
+class TexturedQuad:
 
+
+    def __init__(self, x, y, w, h):
+        self.vertices = (
+            x - w, y + h, 0, 1,
+            x - w, y - h, 0, 0,
+            x + w, y - h, 1, 0,
+
+            x - w, y + h, 0, 1,
+            x + w, y - h, 1, 0,
+            x + w, y + h, 1, 1
+        )
+        self.vertices = np.array(self.vertices, dtype=np.float32)
+
+        self.vertex_count = 6
+        
+        self.vao = glGenVertexArrays(1)
+        glBindVertexArray(self.vao)
+        self.vbo = glGenBuffers(1)
+        glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
+        glBufferData(GL_ARRAY_BUFFER, self.vertices.nbytes, self.vertices, GL_STATIC_DRAW)
+
+        glEnableVertexAttribArray(0)
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 16, ctypes.c_void_p(0))
+
+        glEnableVertexAttribArray(1)
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 16, ctypes.c_void_p(8))
+    
+    def destroy(self):
+        glDeleteVertexArrays(1, (self.vao,))
+        glDeleteBuffers(1, (self.vbo,))
 myApp = App(800,600)
