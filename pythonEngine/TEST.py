@@ -107,9 +107,8 @@ class Scene:
 
         self.lights = [
             Light(
-                position = [1,1,1],
-                color = [1, 1, 1],
-                
+                position = [random.uniform(a = -10, b = 10) for x in range(3)],
+                color = [random.uniform(a = 0.5, b = 1) for x in range(3)]
             )
 
             for i in range(8)
@@ -170,7 +169,6 @@ class App:
             self.scene.update()
             #refresh screen
             self.engine.draw(self.scene)
-            pg.display.set_caption("echo renderer window")
             self.showFrameRate()
         self.quit()
 
@@ -204,7 +202,7 @@ class App:
             pg.display.set_caption(f"Running at {framerate} fps.")
             self.lastTime = self.currentTime
             self.numFrames = -1
-            self.frameTime = float(1000.0 / framerate)
+            self.frameTime = float(60)
         self.numFrames += 1
     
     def quit(self):
@@ -222,6 +220,8 @@ class Engine:
         #initialise opengl
         glClearColor(0.1, 0.1, 0.1, 1)
         glEnable(GL_DEPTH_TEST)
+        glEnable(GL_CULL_FACE)
+        glCullFace(GL_BACK)
         self.shaderTextured = self.createShader(
             "shaders/vertex.txt", 
             "shaders/fragment.txt"
@@ -243,7 +243,7 @@ class Engine:
 
             "pos": [
                 glGetUniformLocation(
-                    self.shaderTextured,f"lights[{i}].pos"
+                    self.shaderTextured,f"lightPos[{i}]"
                 ) 
                 for i in range(8)
             ],
@@ -262,15 +262,12 @@ class Engine:
                 for i in range(8)
             ],
 
-            "enabled": [
-                glGetUniformLocation(
-                    self.shaderTextured,f"lights[{i}].enabled"
-                ) 
-                for i in range(8)
-            ],
+            "count": glGetUniformLocation(
+                self.shaderTextured,f"lightCount"
+            )
         }
 
-        self.cameraLocTextured = glGetUniformLocation(self.shaderTextured, "cameraPos")
+        self.cameraLocTextured = glGetUniformLocation(self.shaderTextured, "viewPos")
 
         #set up uniforms
         glUniformMatrix4fv(
@@ -289,17 +286,29 @@ class Engine:
 
         glUniform1i(
             glGetUniformLocation(
-                self.shaderTextured, "material.diffuse"
+                self.shaderTextured, "material.albedo"
             ), 0
         )
 
         glUniform1i(
             glGetUniformLocation(
-                self.shaderTextured, "material.specular"
+                self.shaderTextured, "material.ao"
             ), 1
         )
+
+        glUniform1i(
+            glGetUniformLocation(
+                self.shaderTextured, "material.normal"
+            ), 2
+        )
+
+        glUniform1i(
+            glGetUniformLocation(
+                self.shaderTextured, "material.specular"
+            ), 3
+        )
         #create assets
-        self.wood_texture = Material("gfx/woodrte")
+        self.wood_texture = Material("moss", "jpg")
         self.cube_mesh = ObjMesh("models/monkey.obj")
         #generate position buffer
         self.cubeTransforms = np.array([
@@ -319,18 +328,18 @@ class Engine:
             self.cubeTransforms, 
             GL_STATIC_DRAW
         )
-        glEnableVertexAttribArray(3)
-        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 64, ctypes.c_void_p(0))
-        glEnableVertexAttribArray(4)
-        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 64, ctypes.c_void_p(16))
         glEnableVertexAttribArray(5)
-        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 64, ctypes.c_void_p(32))
+        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 64, ctypes.c_void_p(0))
         glEnableVertexAttribArray(6)
-        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 64, ctypes.c_void_p(48))
-        glVertexAttribDivisor(3,1)
-        glVertexAttribDivisor(4,1)
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 64, ctypes.c_void_p(16))
+        glEnableVertexAttribArray(7)
+        glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, 64, ctypes.c_void_p(32))
+        glEnableVertexAttribArray(8)
+        glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, 64, ctypes.c_void_p(48))
         glVertexAttribDivisor(5,1)
         glVertexAttribDivisor(6,1)
+        glVertexAttribDivisor(7,1)
+        glVertexAttribDivisor(8,1)
 
         glUseProgram(self.shaderColored)
         #get shader locations
@@ -358,15 +367,14 @@ class Engine:
 
         with open(fragmentFilepath,'r') as f:
             fragment_src = f.readlines()
+
+        temp1 = compileShader(vertex_src, GL_VERTEX_SHADER)
+        temp2 = compileShader(fragment_src, GL_FRAGMENT_SHADER)
         
-        shader = compileProgram(compileShader(vertex_src, GL_VERTEX_SHADER),
-                                compileShader(fragment_src, GL_FRAGMENT_SHADER))
+        shader = compileProgram(temp1,
+                                temp2)
         
         return shader
-
-    def resetLights(self):
-        for i in range(8):
-            glUniform1i(self.lightLocTextured["enabled"][i],0)
 
     def draw(self, scene):
         #refresh screen
@@ -384,16 +392,15 @@ class Engine:
             self.viewLocTextured, 1, GL_FALSE, view_transform
         )
         glUniform3fv(self.cameraLocTextured, 1, scene.player.position)
-        i = 0
-        for light in scene.lights:
+        #lights
+        glUniform1f(self.lightLocTextured["count"], min(8,max(0,len(scene.lights))))
+
+        for i, light in enumerate(scene.lights):
             glUniform3fv(self.lightLocTextured["pos"][i], 1, light.position)
             glUniform3fv(self.lightLocTextured["color"][i], 1, light.color)
             glUniform1f(self.lightLocTextured["strength"][i], 1)
-            glUniform1i(self.lightLocTextured["enabled"][i], 1)
-            i += 1
         
-        i = 0
-        for cube in scene.cubes:
+        for i, cube in enumerate(scene.cubes):
             model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
             model_transform = pyrr.matrix44.multiply(
                 m1=model_transform, 
@@ -408,7 +415,7 @@ class Engine:
                 )
             )
             self.cubeTransforms[i] = model_transform
-            i += 1
+        
         glBindVertexArray(self.cube_mesh.vao)
         glBindBuffer(
             GL_ARRAY_BUFFER, 
@@ -443,40 +450,70 @@ class Engine:
         pg.quit()
 
 class Material:
-    
-    def __init__(self, filepath):
-        self.diffuseTexture = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, self.diffuseTexture)
+    def __init__(self, filename, filetype):
+
+        self.textures = []
+
+        #albedo : 0
+        self.textures.append(glGenTextures(1))
+        glBindTexture(GL_TEXTURE_2D, self.textures[0])
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        image = pg.image.load(f"{filepath}_diffuse.jpg").convert()
+        image = pg.image.load(f"gfx\{filename}_albedo.{filetype}").convert()
         image_width,image_height = image.get_rect().size
         img_data = pg.image.tostring(image,'RGBA')
         glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,image_width,image_height,0,GL_RGBA,GL_UNSIGNED_BYTE,img_data)
         glGenerateMipmap(GL_TEXTURE_2D)
         
-        self.specularTexture = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, self.specularTexture)
+        #ambient occlusion : 1
+        self.textures.append(glGenTextures(1))
+        glBindTexture(GL_TEXTURE_2D, self.textures[1])
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        image = pg.image.load(f"{filepath}_specular.jpg").convert()
+        image = pg.image.load(f"gfx\{filename}_ao.{filetype}").convert()
+        image_width,image_height = image.get_rect().size
+        img_data = pg.image.tostring(image,'RGBA')
+        glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,image_width,image_height,0,GL_RGBA,GL_UNSIGNED_BYTE,img_data)
+        glGenerateMipmap(GL_TEXTURE_2D)
+
+        #normal : 2
+        self.textures.append(glGenTextures(1))
+        glBindTexture(GL_TEXTURE_2D, self.textures[2])
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        image = pg.image.load(f"gfx\{filename}_normal.{filetype}").convert()
+        image_width,image_height = image.get_rect().size
+        img_data = pg.image.tostring(image,'RGBA')
+        glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,image_width,image_height,0,GL_RGBA,GL_UNSIGNED_BYTE,img_data)
+        glGenerateMipmap(GL_TEXTURE_2D)
+
+        #specular : 3
+        self.textures.append(glGenTextures(1))
+        glBindTexture(GL_TEXTURE_2D, self.textures[3])
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        image = pg.image.load(f"gfx\{filename}_normal.{filetype}").convert()
         image_width,image_height = image.get_rect().size
         img_data = pg.image.tostring(image,'RGBA')
         glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,image_width,image_height,0,GL_RGBA,GL_UNSIGNED_BYTE,img_data)
         glGenerateMipmap(GL_TEXTURE_2D)
 
     def use(self):
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D,self.diffuseTexture)
-        glActiveTexture(GL_TEXTURE1)
-        glBindTexture(GL_TEXTURE_2D,self.specularTexture)
+
+        for i in range(len(self.textures)):
+            glActiveTexture(GL_TEXTURE0 + i)
+            glBindTexture(GL_TEXTURE_2D,self.textures[i])
     
     def destroy(self):
-        glDeleteTextures(2, (self.diffuseTexture, self.specularTexture))
+        glDeleteTextures(len(self.textures), self.textures)
 
 class UntexturedCubeMesh:
 
@@ -551,9 +588,9 @@ class UntexturedCubeMesh:
 class ObjMesh:
 
     def __init__(self, filename):
-        # x, y, z, s, t, nx, ny, nz
+        # x, y, z, s, t, nx, ny, nz, tangent, bitangent, model(instanced)
         self.vertices = self.loadMesh(filename)
-        self.vertex_count = len(self.vertices)//8
+        self.vertex_count = len(self.vertices)//14
         self.vertices = np.array(self.vertices, dtype=np.float32)
 
         self.vao = glGenVertexArrays(1)
@@ -561,12 +598,27 @@ class ObjMesh:
         self.vbo = glGenBuffers(1)
         glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
         glBufferData(GL_ARRAY_BUFFER, self.vertices.nbytes, self.vertices, GL_STATIC_DRAW)
+        offset = 0
         #position
         glEnableVertexAttribArray(0)
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(0))
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 56, ctypes.c_void_p(offset))
+        offset += 12
         #texture
         glEnableVertexAttribArray(1)
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(12))
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 56, ctypes.c_void_p(offset))
+        offset += 8
+        #normal
+        glEnableVertexAttribArray(2)
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 56, ctypes.c_void_p(offset))
+        offset += 12
+        #tangent
+        glEnableVertexAttribArray(3)
+        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 56, ctypes.c_void_p(offset))
+        offset += 12
+        #bitangent
+        glEnableVertexAttribArray(4)
+        glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 56, ctypes.c_void_p(offset))
+        offset += 12
     
     def loadMesh(self, filename):
 
@@ -633,12 +685,45 @@ class ObjMesh:
                         vertex_order.append(0)
                         vertex_order.append(i+1)
                         vertex_order.append(i+2)
+                    # calculate tangent and bitangent for point
+                    # how do model positions relate to texture positions?
+                    point1 = faceVertices[vertex_order[0]]
+                    point2 = faceVertices[vertex_order[1]]
+                    point3 = faceVertices[vertex_order[2]]
+                    uv1 = faceTextures[vertex_order[0]]
+                    uv2 = faceTextures[vertex_order[1]]
+                    uv3 = faceTextures[vertex_order[2]]
+                    #direction vectors
+                    deltaPos1 = [point2[i] - point1[i] for i in range(3)]
+                    deltaPos2 = [point3[i] - point1[i] for i in range(3)]
+                    deltaUV1 = [uv2[i] - uv1[i] for i in range(2)]
+                    deltaUV2 = [uv3[i] - uv1[i] for i in range(2)]
+                    # calculate
+                    den = 1 / (deltaUV1[0] * deltaUV2[1] - deltaUV2[0] * deltaUV1[1])
+                    tangent = []
+                    #tangent x
+                    tangent.append(den * (deltaUV2[1] * deltaPos1[0] - deltaUV1[1] * deltaPos2[0]))
+                    #tangent y
+                    tangent.append(den * (deltaUV2[1] * deltaPos1[1] - deltaUV1[1] * deltaPos2[1]))
+                    #tangent z
+                    tangent.append(den * (deltaUV2[1] * deltaPos1[2] - deltaUV1[1] * deltaPos2[2]))
+                    bitangent = []
+                    #bitangent x
+                    bitangent.append(den * (-deltaUV2[0] * deltaPos1[0] + deltaUV1[0] * deltaPos2[0]))
+                    #bitangent y
+                    bitangent.append(den * (-deltaUV2[0] * deltaPos1[1] + deltaUV1[0] * deltaPos2[1]))
+                    #bitangent z
+                    bitangent.append(den * (-deltaUV2[0] * deltaPos1[2] + deltaUV1[0] * deltaPos2[2]))
                     for i in vertex_order:
                         for x in faceVertices[i]:
                             vertices.append(x)
                         for x in faceTextures[i]:
                             vertices.append(x)
                         for x in faceNormals[i]:
+                            vertices.append(x)
+                        for x in tangent:
+                            vertices.append(x)
+                        for x in bitangent:
                             vertices.append(x)
                 line = f.readline()
         return vertices
