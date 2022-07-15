@@ -343,8 +343,8 @@ class App:
                 directionModifier = 315
             
             dPos = [
-                self.frameTime * 0.025 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
-                self.frameTime * 0.025 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
+                self.frameTime * 0.001 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
+                self.frameTime * 0.001 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
                 0
             ]
 
@@ -358,6 +358,8 @@ class App:
     def handleMouse(self):
 
         (x,y) = pg.mouse.get_pos()
+        if x != 400:
+                print("balls")
         theta_increment = self.frameTime * 0.05 * ((self.screenWidth // 2) - x)
         phi_increment = self.frameTime * 0.05 * ((self.screenHeight // 2) - y)
         self.scene.spin_player(theta_increment, phi_increment)
@@ -392,7 +394,7 @@ class GraphicsEngine:
 
         #initialise pygame
         pg.init()
-        pg.mouse.set_visible(False)
+        pg.mouse.set_visible(True)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK,
@@ -1154,4 +1156,4 @@ class TextLine:
         glDeleteVertexArrays(1, (self.vao,))
         glDeleteBuffers(1,(self.vbo,))
 
-myApp = App(800,600)
+myApp = App(1200,800)
