@@ -6,6 +6,33 @@ import pyrr
 import math
 
 ####################### Model #################################################
+global beforeX, beforeZ, beforeY, is_grounded
+beforeX = 0
+beforeY = 0
+beforeZ = 0
+is_grounded = False
+global player
+def groundCollider(z1, z2, x1, x2, y1, y2):
+        global beforeX
+        global beforeZ
+        global beforeY
+        global is_grounded, velocityY
+
+        # Check if inside the box at X-axis and Check if inside the box at Z-axis and Check if inside the box at Y-axis
+        if player.position[0] < x1 and player.position[0] > x2 and player.position[1] > z1 and player.position[1] < z2 and player.position[2] > y1 and player.position[2] < y2:
+             if beforeZ > z1 and beforeZ < z2 and beforeX < x1 and beforeX > x2:
+                is_grounded = True
+                if velocityY <= 0:
+                    velocityY = 0
+                player.position[2] = beforeY
+                return True
+                #Check if before collsiion z was in collider
+             if beforeZ > z1 and beforeZ < z2 :
+                player.position[0] = beforeX
+                #Check if before collsiion x was in collider
+             if beforeX < x1 and beforeX > x2 :
+                player.position[1] = beforeZ
+        return False
 
 class SimpleComponent:
 
@@ -96,8 +123,8 @@ class BrightBillboard:
         )
 
 class Player:
-
-
+    global velocityY
+    velocityY = 0
     def __init__(self, position):
 
         self.position = np.array(position, dtype = np.float32)
@@ -106,7 +133,7 @@ class Player:
         self.update_vectors()
     
     def update_vectors(self):
-
+        
         self.forwards = np.array(
             [
                 np.cos(np.deg2rad(self.theta)) * np.cos(np.deg2rad(self.phi)),
@@ -167,6 +194,8 @@ class Scene:
         self.player = Player(
             position = [0,0,2]
         )
+        global player
+        player = self.player
 
     def update(self, rate):
 
@@ -178,12 +207,34 @@ class Scene:
 
         for light in self.lights:
             light.update(self.player.position)
+
         
+        
+        global beforeX, beforeZ,beforeY
+        
+        global velocityY, is_grounded
+        is_grounded = False
+        
+        mapcolliders = [groundCollider(-250, 250, 2, -2, -1, 0)]
+
         self.player.update_vectors()
+        
+        collide = False
+        for col in mapcolliders:
+             if col:
+                  collider = True
+
+        if not collide:
+             velocityY += -0.81 * (1/60) * (1/60)
+             self.player.position[2] += velocityY
+             beforePosz = self.player.position[1]
+             beforePosx = self.player.position[0]
+             beforePosy = self.player.position[2]
     
     def move_player(self, dPos):
 
         dPos = np.array(dPos, dtype = np.float32)
+        
         self.player.position += dPos
     
     def spin_player(self, dTheta, dPhi):
@@ -230,11 +281,12 @@ class App:
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_ESCAPE:
                         running = False
+            self.scene.update(self.frameTime * 0.05)
+            
             
             self.handleKeys()
             self.handleMouse()
 
-            self.scene.update(self.frameTime * 0.05)
             
             self.renderer.render(self.scene)
 
@@ -297,6 +349,11 @@ class App:
             ]
 
             self.scene.move_player(dPos)
+        global is_grounded
+        print(is_grounded)
+        if is_grounded and keys[pg.K_SPACE]:
+            global velocityY
+            velocityY = .01
 
     def handleMouse(self):
 
