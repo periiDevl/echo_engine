@@ -13,9 +13,9 @@ import random
 from functools import *
 
 import time
-global maplevel
 
-maplevel = 0
+
+
 
 global DeltaTime, FPS
 DeltaTime = 1 / 60
@@ -235,7 +235,7 @@ class RenderPassTexturedLit3D:
         global leveloneobjects
         global leveltwobjects
         def createL0():
-            global maplevel
+            
             for nonscriptname in levelzeroobjects:
 
                 
@@ -282,53 +282,7 @@ class RenderPassTexturedLit3D:
                 glBindVertexArray(nonscriptname.mesh.vao)
                 glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
 
-        def createL2():
-
-            for nonscriptname in leveltwobjects:
-
-                
-                
-                model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
-                model_transform = pyrr.matrix44.multiply(
-                    m1=model_transform, 
-                    m2=pyrr.matrix44.create_from_eulers(
-                        eulers=np.radians(nonscriptname.eulers), dtype=np.float32
-                    )
-                )
-                model_transform = pyrr.matrix44.multiply(
-                    m1=model_transform, 
-                    m2=pyrr.matrix44.create_from_translation(
-                        vec=np.array(nonscriptname.position),dtype=np.float32
-                    )
-                )
-                glUniformMatrix4fv(self.modelMatrixLocation,1,GL_FALSE,model_transform)
-                nonscriptname.tex.use()
-                glBindVertexArray(nonscriptname.mesh.vao)
-                glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
-        def createL3():
-
-            for nonscriptname in levelthreebjects:
-
-                
-                
-                model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
-                model_transform = pyrr.matrix44.multiply(
-                    m1=model_transform, 
-                    m2=pyrr.matrix44.create_from_eulers(
-                        eulers=np.radians(nonscriptname.eulers), dtype=np.float32
-                    )
-                )
-                model_transform = pyrr.matrix44.multiply(
-                    m1=model_transform, 
-                    m2=pyrr.matrix44.create_from_translation(
-                        vec=np.array(nonscriptname.position),dtype=np.float32
-                    )
-                )
-                glUniformMatrix4fv(self.modelMatrixLocation,1,GL_FALSE,model_transform)
-                nonscriptname.tex.use()
-                glBindVertexArray(nonscriptname.mesh.vao)
-                glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
-
+        
                 
 
                 
@@ -344,35 +298,22 @@ class RenderPassTexturedLit3D:
 
         glUniform3fv(self.cameraPosLoc, 1, scene.player.position)
 
-        if maplevel == 0:
-            for i,light in enumerate(scene.lights):
-                glUniform3fv(self.lightLocation["position"][i], 1, light.position)
-                glUniform3fv(self.lightLocation["color"][i], 1, light.color)
-                glUniform1f(self.lightLocation["strength"][i], light.strength)
-        if maplevel == 1:
-            for i,light in enumerate(scene.lightslevtwo):
-                glUniform3fv(self.lightLocation["position"][i], 1, light.position)
-                glUniform3fv(self.lightLocation["color"][i], 1, light.color)
-                glUniform1f(self.lightLocation["strength"][i], light.strength)
-        if maplevel == 2:
-            for i,light in enumerate(scene.lightslevthree):
-                glUniform3fv(self.lightLocation["position"][i], 1, light.position)
-                glUniform3fv(self.lightLocation["color"][i], 1, light.color)
-                glUniform1f(self.lightLocation["strength"][i], light.strength)
-       
+        
+        for i,light in enumerate(scene.lights):
+            glUniform3fv(self.lightLocation["position"][i], 1, light.position)
+            glUniform3fv(self.lightLocation["color"][i], 1, light.color)
+            glUniform1f(self.lightLocation["strength"][i], light.strength)
+        
         #leveloneobjects = [SimpleComponent(mesh = engine.ca,position = [6,0,1], eulers = [0,0,0]),]
         #def createNonObjects():
         
         
         
-        if maplevel == 0:
-            createL0()
-        elif maplevel == 1:
-            createL1()
-        elif maplevel == 2:
-            createL2()
         
-            for fow in scene.fows:
+        createL0()
+        
+        
+        for fow in scene.fows:
 
                 engine.fow_texture.use()
 
@@ -506,13 +447,8 @@ class GraphicsEngine:
         self.texturedPass = RenderPassTextured3D(shader)
         self.light_texture = Material("gfx/lightPlaceHolder.png")
         self.light_billboard = BillBoard(w = 0.2, h = 0.1)
-        global boobj
-        boobj = [SimpleComponent(mesh = self.boo_body, tex = self.boo_body_texture ,position = [3.8,-9.6,-5.8], eulers = [270,0,90]),
-                 SimpleComponent(mesh = self.boo_eye, tex = self.boo_eye_texture ,position = [3.8,-9.6,-5.8], eulers = [270,0,90]),
-                 SimpleComponent(mesh = self.boo_eye_pup, tex = self.boo_eye_pup_texture ,position = [0,-9.6,-5.8], eulers = [270,0,90]),
-                 SimpleComponent(mesh = self.boo_bars, tex = self.boo_bars_texture ,position = [3.8,-9.6,-5.8], eulers = [270,0,90])]
         
-        global maplevel
+        
         
         global levelzeroobjects
         levelzeroobjects = [SimpleComponent(mesh = self.wall, tex = self.walltexture ,position = [3.7,0,-5.8], eulers = [90,0,0]),
@@ -682,11 +618,7 @@ class GraphicsEngine:
             
             SimpleComponent(mesh = self.levtwo, tex = self.doorpart2wTex ,position = [0,-3.4,-3.5], eulers = [90,0,90]),
             SimpleComponent(mesh = self.levtwoB, tex = self.wall_lev_two_texture ,position = [0,-3.4,-3.5], eulers = [90,0,90]),
-            boobj[0],
-            boobj[1],
-            boobj[2],
-            boobj[3],
-            key2
+            
             ]
         global levelthreeobjects
         levelthreeobjects = [SimpleComponent(mesh = self.floor, tex = self.mosstexture ,position = [0,0,-9], eulers = [90,0,0]),
@@ -1058,18 +990,7 @@ class Scene:
     
     
     
-    def PickupKey(self):
-        pg.mixer.init()
-        pickupkeySound = pg.mixer.Sound('sounds/pickupkey.wav')
-        pickupkeySound.play()
-        pickupkeySound.set_volume(0.1)
-        global GotKey, maplevel,leveltwobjects
-        GotKey = True
-        if maplevel == 1:
-            levelonebjects.remove(levelonebjects[len(levelonebjects)-1])
-        if maplevel == 2:
-            leveltwobjects.remove(leveltwobjects[len(leveltwobjects)-1])
-        time.sleep(0.15)
+    
         
     def groundCollider(self, z1, z2, x1, x2, y1, y2):
         global beforePosx
@@ -1089,20 +1010,7 @@ class Scene:
                 #Check if before collsiion x was in collider
              if beforePosx < x1 and beforePosx > x2 :
                 self.player.position[0] = beforePosz
-    def CheckDoor(self):
-         global GotKey, video,donevideo, running
-         global maplevel
-         if GotKey:
-             maplevel += 1
-             GotKey = False
-             if maplevel == 1:
-                 self.player.position = [-11, 13, -6.5]
-             if maplevel == 2:
-                 self.player.position = [-9, -24, -6.5]
-                 for obj in boobj:
-            
-                     obj.position = [3.8,0,-5.8]
-                     obj.position = [3.8,0,-5.8]
+    
     def normalizevector(self, vec):
          length = math.sqrt(vec[0]**2 + vec[1]**2 + vec[2]**2)
          if length == 0:
@@ -1123,72 +1031,8 @@ class Scene:
          return self.player.position
     def distance(self, v1, v2):
          return math.sqrt(self.Abs(v2[0] - v1[0]) + self.Abs(v2[1] - v1[1]))
-    def patrolpos(self):
-         global bacteriamanobject, indexpatrol, indexpatrolpos
-         indexpatrolpos += 1
-         if indexpatrolpos >= len(enemyleveltwopartols()[indexpatrol]):
-              indexpatrol = random.randrange(0, len(enemyleveltwopartols()))
-              indexpatrolpos = 0
-              for obj in bacteriamanobject:
-                   obj.position = enemyleveltwopartols()[indexpatrol][indexpatrolpos]
-
-         self.enemytarget = enemyleveltwopartols()[indexpatrol][indexpatrolpos]
-    def moveenemy(self):
-        global DeltaTime
-        if self.distance(self.enemytarget,bacteriamanobject[0].position ) > 0.5 and indexpatrolpos == 0:
-             for obj in bacteriamanobject:
-                   obj.position = enemyleveltwopartols()[indexpatrol][indexpatrolpos]           
-        if self.distance(self.enemytarget,bacteriamanobject[0].position ) < 0.5:
-             self.patrolpos()
-
-        targetpos = [self.enemytarget[0] - bacteriamanobject[0].position[0],
-                     self.enemytarget[1] - bacteriamanobject[0].position[1],
-                     0]
-
-        direction = targetpos
-        angle = math.atan2(direction[0], direction[1]) * 57.29578 + -90
-        for obj in bacteriamanobject:
-             obj.eulers[2] = angle
-
-        EnemySpeed = 2
-        targetpos = self.normalizevector(targetpos)
-        for obj in bacteriamanobject:
-             obj.position[0] += targetpos[0] * (1/60) * EnemySpeed
-             obj.position[1] += targetpos[1] * (1/60) * EnemySpeed
-             
-    def moveenemy2(self):
-        global DeltaTime
-        if self.distance(self.enemytarget2, boobj[0].position) < 0.07:
-             self.enemytarget2 = self.randomtarget()
-        targetpos2 = [self.enemytarget2[0] - boobj[0].position[0],
-                     self.enemytarget2[1] - boobj[0].position[1],
-                     self.enemytarget2[2] - boobj[0].position[2]]
-        direction = targetpos2
-        angle = math.atan2(direction[0], direction[1]) * 57.29578 + -90
-        for obj in boobj:
-             obj.eulers[2] = angle
-        
-        targetpos2 = self.normalizevector(targetpos2)
-        EnemySpeed2 = 1.356
-        desiredPos = [targetpos2[0] * (1/60) * EnemySpeed2 + boobj[0].position[0],targetpos2[1] * (1/60) * EnemySpeed2 + boobj[0].position[1], -5]
-        for obj in boobj:
-            
-            obj.position = desiredPos
-            obj.position = desiredPos
-
-    def Jumpscare(self):
-        #Reset Scene
-        global maplevel
-        if maplevel == 1:
-            self.player.position =[-11, 12, -6.5]
-            for obj in bacteriamanobject:      
-                obj.position = [-6 , 16.5, -6.5]
-        if maplevel == 2:
-            self.player.position = [-9, -24, -6.5]
-            for obj in boobj:
-            
-                obj.position = [3.8,0,-5.8]
-                obj.position = [3.8,0,-5.8]
+    
+    
         
     def update(self, rate):
         global beforekeys,boobj, GotKey
@@ -1200,7 +1044,7 @@ class Scene:
         self.runspeed = 7
         self.curspeed = self.speed
         self.is_grounded = False
-        global maplevel
+        
         global mapcolliders
         
         G_is = self.is_grounded
@@ -1210,76 +1054,20 @@ class Scene:
         mapcolliders = [Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5)]
 
         #move bacteriaman
-        if maplevel == 1:
-            self.moveenemy()
-        if maplevel == 2:
-            self.moveenemy2()
         
         
-        if maplevel == 0:
-            GotKey = True
-            mapcolliders = [Scene.groundCollider(self, -4, 4, -2.8, -4.5, -7, 0),
+        
+        
+            
+        mapcolliders = [Scene.groundCollider(self, -4, 4, -2.8, -4.5, -7, 0),
                          Scene.groundCollider(self, -4, 4, 10.3, 8.4, -7, 0),
                          Scene.groundCollider(self, 3, 4.5, 11.3, -4, -7, 0),
                          Scene.groundCollider(self, -4, -3, 11.3, -4, -7, 0),
                          Scene.groundCollider(self, -0.6, 0.5, 2.6, -11, -7, 0),
                          Scene.groundCollider(self, 1, 3, 8.5, 6.7, -7, -6),
-                         #door!
-                         Scene.boxTrigger(self, -3, -1, -2.65, -6.7, -7, -6, self.CheckDoor),
+                         
                          Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5),]
             
-        if maplevel ==1:
-            mapcolliders = [
-                     Scene.boxCollider(self, 0.85, 3, 5.6, -1.65, -7, 10),
-                     Scene.boxCollider(self,-4.25, -3, 9.55,-4.6, -7, 10),
-                     Scene.boxCollider(self, -3.6, 3.6, 9.54, 8.5, -7, 10),
-                     Scene.boxCollider(self, -15.15, -14, 15.5, -8.45, -7, 10),
-                     Scene.boxCollider(self, -14.46, -7.4, -0.417, -1.564, -7, 10),
-                     Scene.boxCollider(self, -14.46, -7.4, -0.417+6, -1.564+6, -7, 10),
-                     Scene.boxCollider(self, 7.37, 14.57, -.498, -1.57, -7, 10),
-                     Scene.boxCollider(self, 7.37, 14.57, 5.52, 4.4, -7, 10),
-                     Scene.boxCollider(self, 13.84, 15,15.5, -8.45, -7, 10),
-                     Scene.boxCollider(self, -15.15, 15,15.5, 14.5, -7, 10),
-                     Scene.boxCollider(self, -15.15, 15,-7.7, -8.7, -7, 10),
-                     Scene.boxTrigger(self, 10.5, 12.45, 4.8, 4.2, -10, 7.5, self.CheckDoor),
-                     Scene.boxCollider(self, 10.5, 12.45, 4.8, 4.2, -10, 7.5)
-                     ]
-            mapcolliders.append(Scene.boxTrigger(self, bacteriamanobject[0].position[0]+-1,bacteriamanobject[0].position[0]+1, bacteriamanobject[0].position[1]+1, bacteriamanobject[0].position[1]+-1, -10, -6.5, self.Jumpscare))
-
-            if not GotKey:
-                mapcolliders.append(Scene.boxTrigger(self, 0.8, 1.5, 1, -0.65, -7, 10,self.PickupKey))
-        if maplevel == 2:
-            
-            mapcolliders = [
-                         
-                         #cene.groundCollider(self, -0.6, 0.6 ,8.5, 6.6, -6.042, 0),
-                         Scene.groundCollider(self, -0.593,0.683 ,6.03, -6.647, -7, 0),
-                         Scene.groundCollider(self,-6.618, -5.5 ,6.03, -6.647, -7, 0),
-                         Scene.groundCollider(self, -6.08, 6.54 ,12.5, 11.268 , -7, 0),
-                         Scene.groundCollider(self, 0.3, 6.512 ,5.944, 4.68 , -7, 0),
-                         Scene.groundCollider(self, -23.39, 13.515,20.83, 19.44 , -7, 0),
-                         Scene.groundCollider(self, 19.684,20.919,25.92, -23.464 , -7, 0),
-                         Scene.groundCollider(self,0.715, 20.93,25.89, 24.722 , -7, 0),
-                         Scene.groundCollider(self,0.661, 1.93,25.89, 20 , -7, 0),
-                         Scene.groundCollider(self,11.56, 24.417,-20.75, -21.95 , -7, 0),
-                         Scene.groundCollider(self,-6.07, 12.789,-15.1, -28.55 , -7, 0),
-                         Scene.groundCollider(self,-18.28, -4.25,-27.21, -28.469 , -7, 0),
-                         Scene.groundCollider(self,-13.131, -11.76,-21.4,-30 , -7, 0),
-                         Scene.groundCollider(self,-18.39, -17.09, 20.84,-28.48 , -7, 0),
-                         Scene.groundCollider(self,-12.87,-5.5,-5.43,-6.74 , -7, 0),
-                         Scene.groundCollider(self,-13.14,-11.77, 12.12,5.43 , -7, 0),
-                         Scene.groundCollider(self,11.37,12.73, 12.12,5.43 , -7, 0),
-                         Scene.groundCollider(self,-13.05,-6.48, -9.89,-11.178 , -7, 0),
-                         Scene.groundCollider(self,-13.148,-11.88, -9.87, -16.38 , -7, 0),
-                         
-                         Scene.groundCollider(self,8.74, 15.29,0.364, -0.93 , -7, 0),
-                         Scene.groundCollider(self, -250, 250, 250, -250, -10, -6.5),
-                         Scene.boxTrigger(self,  -13.4, -12.5, 10, 8, -7, 0, self.CheckDoor),
-                         Scene.boxCollider(self, -13.4, -12.5, 10, 8, -7, 0)]
-            mapcolliders.append(Scene.boxTrigger(self, boobj[0].position[0]+-1,boobj[0].position[0]+1, boobj[0].position[1]+1, boobj[0].position[1]+-1, -10, -6.5, self.Jumpscare))
-
-            if not GotKey:
-                    mapcolliders.append(Scene.boxTrigger(self, 1.9, 2.25, 24, 22, -10, -6.5, self.PickupKey))
         
         collide = False
         for col in mapcolliders:
