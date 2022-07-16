@@ -4,7 +4,7 @@ from OpenGL.GL.shaders import compileProgram,compileShader
 import numpy as np
 import pyrr
 import math
-
+import random
 ####################### Model #################################################
 global beforeX, beforeZ, beforeY, is_grounded
 beforeX = 0
@@ -217,13 +217,16 @@ class SimpleComponent:
 class NormalComponent:
 
 
-    def __init__(self, mesh , tex ,position, eulers):
+    def __init__(self, mesh , tex ,position, eulers, draw):
+        
         self.mesh = mesh
         self.tex = tex
         self.position = np.array(position, dtype=np.float32)
         self.eulers = np.array(eulers, dtype=np.float32)
         self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
-    
+        self.r = random.randrange(0, 3)
+        print(self.r)
+        self.draw = draw
     def update(self, rate):
 
         self.eulers[1] += 0.25 * rate
@@ -243,6 +246,7 @@ class NormalComponent:
                 vec=np.array(self.position),dtype=np.float32
             )
         )
+        
         
 class BillBoardComponent:
 
@@ -712,13 +716,15 @@ class GraphicsEngine:
                 mesh = self.cube_mesh,
                 tex = self.light_texture,
                 position = [6,0,1],
-                eulers = [0,0,0]
+                eulers = [0,0,0],
+                draw = True
             ),NormalComponent(
                 
                 mesh = self.n,
                 tex = self.wood_texture,
                 position = [6,0,1],
-                eulers = [0,0,0]
+                eulers = [0,0,0],
+                draw = True
             ),]
         
         self.font = Font()
@@ -774,12 +780,14 @@ class GraphicsEngine:
         for nonscriptname in TestGroup:
 
                 
-                
+                if nonscriptname.r == 1:
+                    nonscriptname.draw = False
                 glUniformMatrix4fv(self.modelMatrixLocation["lit"],1,GL_FALSE,nonscriptname.modelTransform)
                 
                 nonscriptname.tex.use()
-                glBindVertexArray(nonscriptname.mesh.vao)
-                glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
+                if nonscriptname.draw == True:
+                    glBindVertexArray(nonscriptname.mesh.vao)
+                    glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
 
         #CREATE_OBJECT(TestGroup)
         #self.medkit_texture.use()
