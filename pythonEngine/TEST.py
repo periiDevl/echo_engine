@@ -719,7 +719,7 @@ class GraphicsEngine:
                 tex = self.wood_texture,
                 position = [6,0,1],
                 eulers = [0,0,0]
-            )]
+            ),]
         
         self.font = Font()
         self.fps_label = TextLine("FPS: ", self.font, (-0.9, 0.9), (0.05, 0.05))
@@ -743,14 +743,7 @@ class GraphicsEngine:
         self.fps_label.build_text(f"FPS: {new_fps}", self.font)
     
     def render(self, scene):
-        global TestGroup
-        
-        for i in TestGroup:
                 
-                glUniformMatrix4fv(self.modelMatrixLocation["lit"],1,GL_FALSE,i.modelTransform)
-                glDrawArrays(GL_TRIANGLES, 0, i.mesh.vertex_count)
-                i.tex.use()
-        
         #First pass
         glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[0])
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -774,6 +767,20 @@ class GraphicsEngine:
         for cube in scene.cubes:
             glUniformMatrix4fv(self.modelMatrixLocation["lit"],1,GL_FALSE,cube.modelTransform)
             glDrawArrays(GL_TRIANGLES, 0, self.cube_mesh.vertex_count)
+
+        global TestGroup
+        
+        
+        for nonscriptname in TestGroup:
+
+                
+                
+                glUniformMatrix4fv(self.modelMatrixLocation["lit"],1,GL_FALSE,nonscriptname.modelTransform)
+                
+                nonscriptname.tex.use()
+                glBindVertexArray(nonscriptname.mesh.vao)
+                glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
+
         #CREATE_OBJECT(TestGroup)
         #self.medkit_texture.use()
         glBindVertexArray(self.medkit_billboard.vao)
