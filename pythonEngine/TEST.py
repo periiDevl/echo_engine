@@ -408,7 +408,7 @@ class Scene:
                   collider = True
 
         if not collide:
-             velocityY += -0.81 * (1/60) * (1/60)
+             velocityY += -0.2 * (1/60) * (1/60)
              self.player.position[2] += velocityY
              beforePosz = self.player.position[1]
              beforePosx = self.player.position[0]
@@ -551,13 +551,13 @@ class App:
 
         self.currentTime = pg.time.get_ticks()
         delta = self.currentTime - self.lastTime
-        if (delta >= 1000):
-            framerate = max(1,int(1000.0 * self.numFrames/delta))
+        if (delta >= 60):
+            framerate = max(1,int(60.0 * self.numFrames/delta))
             pg.display.set_caption(f"Echo window")
             self.renderer.update_fps(framerate)
             self.lastTime = self.currentTime
             self.numFrames = -1
-            self.frameTime = float(1000.0 / max(1,framerate))
+            self.frameTime = float(60)
         self.numFrames += 1
 
     def quit(self):
@@ -576,7 +576,7 @@ class GraphicsEngine:
 
         #initialise pygame
         pg.init()
-        pg.mouse.set_visible(True)
+        pg.mouse.set_visible(False)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK,
@@ -584,11 +584,12 @@ class GraphicsEngine:
         pg.display.set_mode((self.screenWidth,self.screenHeight), pg.OPENGL|pg.DOUBLEBUF)
 
         #initialise opengl
+        
         glClearColor(0.0, 0.0, 0.0, 1)
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
+        
         self.create_framebuffers()
 
         self.setup_shaders()
@@ -596,7 +597,7 @@ class GraphicsEngine:
         self.query_shader_locations()
 
         self.create_assets()
-    
+        
     def create_framebuffers(self):
         self.fbos = []
         self.colorBuffers = []
@@ -754,7 +755,7 @@ class GraphicsEngine:
         glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[0])
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glEnable(GL_DEPTH_TEST)
-
+        
         #lit shader
         glUseProgram(self.lighting_shader)
 

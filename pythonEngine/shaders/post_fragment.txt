@@ -79,5 +79,5 @@ vec4 Identity() {
 void main() {
     //fragmentColor = 1.5 * Edge(vec3(1,1,1));
     fragmentColor = Identity();
-    //fragmentColor = vec4(0.5);
+    //fragmentColor = 2 * Blur(vec3(1, 1, 1));
 }
