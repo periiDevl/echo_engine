@@ -12,653 +12,7 @@ beforeY = 0
 beforeZ = 0
 is_grounded = False
 global player
-def groundCollider(z1, z2, x1, x2, y1, y2):
-        global beforeX
-        global beforeZ
-        global beforeY
-        global is_grounded, velocityY
 
-        # Check if inside the box at X-axis and Check if inside the box at Z-axis and Check if inside the box at Y-axis
-        if player.position[0] < x1 and player.position[0] > x2 and player.position[1] > z1 and player.position[1] < z2 and player.position[2] > y1 and player.position[2] < y2:
-             if beforeZ > z1 and beforeZ < z2 and beforeX < x1 and beforeX > x2:
-                is_grounded = True
-                if velocityY <= 0:
-                    velocityY = 0
-                player.position[2] = beforeY
-                return True
-                #Check if before collsiion z was in collider
-             if beforeZ > z1 and beforeZ < z2 :
-                player.position[0] = beforeX
-                #Check if before collsiion x was in collider
-             if beforeX < x1 and beforeX > x2 :
-                player.position[1] = beforeZ
-        return False
-
-class SimpleComponent:
-
-
-    def __init__(self, position, eulers):
-
-        self.position = np.array(position, dtype=np.float32)
-        self.eulers = np.array(eulers, dtype=np.float32)
-        self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
-    
-    def update(self, rate):
-
-        self.eulers[1] += 0.25 * rate
-        if self.eulers[1] > 360:
-            self.eulers[1] -= 360
-        
-        self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
-        self.modelTransform = pyrr.matrix44.multiply(
-            m1=self.modelTransform, 
-            m2=pyrr.matrix44.create_from_eulers(
-                eulers=np.radians(self.eulers), dtype=np.float32
-            )
-        )
-        self.modelTransform = pyrr.matrix44.multiply(
-            m1=self.modelTransform, 
-            m2=pyrr.matrix44.create_from_translation(
-                vec=np.array(self.position),dtype=np.float32
-            )
-        )
-        
-class BillBoardComponent:
-
-    def __init__(self, position):
-
-        self.position = np.array(position, dtype=np.float32)
-        self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
-    
-    def update(self, playerPosition):
-        
-        directionFromPlayer = self.position - playerPosition
-        angle1 = np.arctan2(-directionFromPlayer[1],directionFromPlayer[0])
-        dist2d = math.sqrt(directionFromPlayer[0] ** 2 + directionFromPlayer[1] ** 2)
-        angle2 = np.arctan2(directionFromPlayer[2],dist2d)
-
-        self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
-        self.modelTransform = pyrr.matrix44.multiply(
-            self.modelTransform,
-            pyrr.matrix44.create_from_y_rotation(theta=angle2, dtype=np.float32)
-        )
-        self.modelTransform = pyrr.matrix44.multiply(
-           self.modelTransform,
-            pyrr.matrix44.create_from_z_rotation(theta=angle1, dtype=np.float32)
-        )
-        self.modelTransform = pyrr.matrix44.multiply(
-            self.modelTransform,
-            pyrr.matrix44.create_from_translation(self.position,dtype=np.float32)
-        )
-
-class BrightBillboard:
-
-
-    def __init__(self, position, color, strength):
-
-        self.position = np.array(position, dtype=np.float32)
-        self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
-        self.color = np.array(color, dtype=np.float32)
-        self.strength = strength
-    
-    def update(self, playerPosition):
-        
-        directionFromPlayer = self.position - playerPosition
-        angle1 = np.arctan2(-directionFromPlayer[1],directionFromPlayer[0])
-        dist2d = math.sqrt(directionFromPlayer[0] ** 2 + directionFromPlayer[1] ** 2)
-        angle2 = np.arctan2(directionFromPlayer[2],dist2d)
-
-        self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
-        self.modelTransform = pyrr.matrix44.multiply(
-            self.modelTransform,
-            pyrr.matrix44.create_from_y_rotation(theta=angle2, dtype=np.float32)
-        )
-        self.modelTransform = pyrr.matrix44.multiply(
-           self.modelTransform,
-            pyrr.matrix44.create_from_z_rotation(theta=angle1, dtype=np.float32)
-        )
-        self.modelTransform = pyrr.matrix44.multiply(
-            self.modelTransform,
-            pyrr.matrix44.create_from_translation(self.position,dtype=np.float32)
-        )
-
-class Player:
-    global velocityY
-    velocityY = 0
-    def __init__(self, position):
-
-        self.position = np.array(position, dtype = np.float32)
-        self.theta = 0
-        self.phi = 0
-        self.update_vectors()
-    
-    def update_vectors(self):
-        
-        self.forwards = np.array(
-            [
-                np.cos(np.deg2rad(self.theta)) * np.cos(np.deg2rad(self.phi)),
-                np.sin(np.deg2rad(self.theta)) * np.cos(np.deg2rad(self.phi)),
-                np.sin(np.deg2rad(self.phi))
-            ],
-            dtype = np.float32
-        )
-
-        globalUp = np.array([0,0,1], dtype=np.float32)
-
-        self.right = np.cross(self.forwards, globalUp)
-
-        self.up = np.cross(self.right, self.forwards)
-
-        self.viewTransform = pyrr.matrix44.create_look_at(
-            eye = self.position,
-            target = self.position + self.forwards,
-            up = self.up, 
-            dtype = np.float32
-        )
-
-class Scene:
-
-
-    def __init__(self):
-
-        self.cubes = [
-            SimpleComponent(
-                position = [6,0,1],
-                eulers = [0,0,0]
-            ),
-        ]
-
-        self.medkits = [
-            BillBoardComponent(
-                position = [3,0,0.5]
-            )
-        ]
-
-        self.lights = [
-            BrightBillboard(
-                position = [
-                    4.0, 
-                    -4.0 + i, 
-                    1.0
-                ],
-                color = [
-                    np.random.uniform(low=0.0, high=1.0), 
-                    np.random.uniform(low=0.0, high=1.0), 
-                    np.random.uniform(low=0.0, high=1.0)
-                ],
-                strength = 3
-            )
-            for i in range(8)
-        ]
-
-        self.player = Player(
-            position = [0,0,2]
-        )
-        global player
-        player = self.player
-
-    def update(self, rate):
-
-        for cube in self.cubes:
-            cube.update(rate)
-        
-        for medkit in self.medkits:
-            medkit.update(self.player.position)
-
-        for light in self.lights:
-            light.update(self.player.position)
-
-        
-        
-        global beforeX, beforeZ,beforeY
-        
-        global velocityY, is_grounded
-        is_grounded = False
-        
-        mapcolliders = [groundCollider(-250, 250, 2, -2, -1, 0)]
-
-        self.player.update_vectors()
-        
-        collide = False
-        for col in mapcolliders:
-             if col:
-                  collider = True
-
-        if not collide:
-             velocityY += -0.81 * (1/60) * (1/60)
-             self.player.position[2] += velocityY
-             beforePosz = self.player.position[1]
-             beforePosx = self.player.position[0]
-             beforePosy = self.player.position[2]
-    
-    def move_player(self, dPos):
-
-        dPos = np.array(dPos, dtype = np.float32)
-        
-        self.player.position += dPos
-    
-    def spin_player(self, dTheta, dPhi):
-
-        self.player.theta += dTheta
-        if self.player.theta > 360:
-            self.player.theta -= 360
-        elif self.player.theta < 0:
-            self.player.theta += 360
-        
-        self.player.phi = min(
-            89, max(-89, self.player.phi + dPhi)
-        )
-
-####################### Control ###############################################
-
-class App:
-
-
-    def __init__(self, screenWidth, screenHeight):
-
-        self.screenWidth = screenWidth
-        self.screenHeight = screenHeight
-
-        self.renderer = GraphicsEngine(screenWidth, screenHeight)
-
-        self.scene = Scene()
-
-        self.lastTime = pg.time.get_ticks()
-        self.currentTime = 0
-        self.numFrames = 0
-        self.frameTime = 0
-        self.lightCount = 0
-
-        self.mainLoop()
-
-    def mainLoop(self):
-        running = True
-        while (running):
-            #check events
-            for event in pg.event.get():
-                if (event.type == pg.QUIT):
-                    running = False
-                elif event.type == pg.KEYDOWN:
-                    if event.key == pg.K_ESCAPE:
-                        running = False
-            self.scene.update(self.frameTime * 0.05)
-            
-            
-            self.handleKeys()
-            self.handleMouse()
-
-            
-            self.renderer.render(self.scene)
-
-            #timing
-            self.calculateFramerate()
-        self.quit()
-
-    def handleKeys(self):
-
-        keys = pg.key.get_pressed()
-        combo = 0
-        directionModifier = 0
-        """
-        w: 1 -> 0 degrees
-        a: 2 -> 90 degrees
-        w & a: 3 -> 45 degrees
-        s: 4 -> 180 degrees
-        w & s: 5 -> x
-        a & s: 6 -> 135 degrees
-        w & a & s: 7 -> 90 degrees
-        d: 8 -> 270 degrees
-        w & d: 9 -> 315 degrees
-        a & d: 10 -> x
-        w & a & d: 11 -> 0 degrees
-        s & d: 12 -> 225 degrees
-        w & s & d: 13 -> 270 degrees
-        a & s & d: 14 -> 180 degrees
-        w & a & s & d: 15 -> x
-        """
-
-        if keys[pg.K_w]:
-            combo += 1
-        if keys[pg.K_a]:
-            combo += 2
-        if keys[pg.K_s]:
-            combo += 4
-        if keys[pg.K_d]:
-            combo += 8
-        
-        if combo > 0:
-            if combo == 3:
-                directionModifier = 45
-            elif combo == 2 or combo == 7:
-                directionModifier = 90
-            elif combo == 6:
-                directionModifier = 135
-            elif combo == 4 or combo == 14:
-                directionModifier = 180
-            elif combo == 12:
-                directionModifier = 225
-            elif combo == 8 or combo == 13:
-                directionModifier = 270
-            elif combo == 9:
-                directionModifier = 315
-            
-            dPos = [
-                self.frameTime * 0.001 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
-                self.frameTime * 0.001 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
-                0
-            ]
-
-            self.scene.move_player(dPos)
-        global is_grounded
-        print(is_grounded)
-        if is_grounded and keys[pg.K_SPACE]:
-            global velocityY
-            velocityY = .01
-
-    def handleMouse(self):
-
-        (x,y) = pg.mouse.get_pos()
-        if x != 400:
-                print("balls")
-        theta_increment = self.frameTime * 0.05 * ((self.screenWidth // 2) - x)
-        phi_increment = self.frameTime * 0.05 * ((self.screenHeight // 2) - y)
-        self.scene.spin_player(theta_increment, phi_increment)
-        pg.mouse.set_pos((self.screenWidth // 2,self.screenHeight // 2))
-
-    def calculateFramerate(self):
-
-        self.currentTime = pg.time.get_ticks()
-        delta = self.currentTime - self.lastTime
-        if (delta >= 1000):
-            framerate = max(1,int(1000.0 * self.numFrames/delta))
-            #pg.display.set_caption(f"Running at {framerate} fps.")
-            self.renderer.update_fps(framerate)
-            self.lastTime = self.currentTime
-            self.numFrames = -1
-            self.frameTime = float(1000.0 / max(1,framerate))
-        self.numFrames += 1
-
-    def quit(self):
-        
-        self.renderer.destroy()
-
-####################### View  #################################################
-
-class GraphicsEngine:
-
-
-    def __init__(self, screenWidth, screenHeight):
-
-        self.screenWidth = screenWidth
-        self.screenHeight = screenHeight
-
-        #initialise pygame
-        pg.init()
-        pg.mouse.set_visible(True)
-        pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
-        pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
-        pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK,
-                                    pg.GL_CONTEXT_PROFILE_CORE)
-        pg.display.set_mode((self.screenWidth,self.screenHeight), pg.OPENGL|pg.DOUBLEBUF)
-
-        #initialise opengl
-        glClearColor(0.0, 0.0, 0.0, 1)
-        glEnable(GL_DEPTH_TEST)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-        self.create_framebuffers()
-
-        self.setup_shaders()
-
-        self.query_shader_locations()
-
-        self.create_assets()
-    
-    def create_framebuffers(self):
-        self.fbos = []
-        self.colorBuffers = []
-        self.depthStencilBuffers = []
-        for i in range(2):
-            self.fbos.append(glGenFramebuffers(1))
-            glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[i])
-        
-            self.colorBuffers.append(glGenTextures(1))
-            glBindTexture(GL_TEXTURE_2D, self.colorBuffers[i])
-            glTexImage2D(
-                GL_TEXTURE_2D, 0, GL_RGB, 
-                self.screenWidth, self.screenHeight,
-                0, GL_RGB, GL_UNSIGNED_BYTE, None
-            )
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-            glBindTexture(GL_TEXTURE_2D, 0)
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
-                                    GL_TEXTURE_2D, self.colorBuffers[i], 0)
-            
-            self.depthStencilBuffers.append(glGenRenderbuffers(1))
-            glBindRenderbuffer(GL_RENDERBUFFER, self.depthStencilBuffers[i])
-            glRenderbufferStorage(
-                GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, self.screenWidth, self.screenHeight
-            )
-            glBindRenderbuffer(GL_RENDERBUFFER,0)
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, 
-                                        GL_RENDERBUFFER, self.depthStencilBuffers[i])
-
-            glBindFramebuffer(GL_FRAMEBUFFER, 0)
-    
-    def setup_shaders(self):
-
-        projection_transform = pyrr.matrix44.create_perspective_projection(
-            fovy = 45, aspect = self.screenWidth/self.screenHeight, 
-            near = 0.1, far = 50, dtype=np.float32
-        )
-
-        self.lighting_shader = self.createShader("shaders/vertex.txt", "shaders/fragment.txt")
-        glUseProgram(self.lighting_shader)
-        glUniformMatrix4fv(
-            glGetUniformLocation(self.lighting_shader,"projection"),
-            1, GL_FALSE, projection_transform
-        )
-        glUniform1i(glGetUniformLocation(self.lighting_shader, "material.albedo"), 0)
-        glUniform1i(glGetUniformLocation(self.lighting_shader, "material.ao"), 1)
-        glUniform1i(glGetUniformLocation(self.lighting_shader, "material.specular"), 2)
-        glUniform1i(glGetUniformLocation(self.lighting_shader, "material.normal"), 3)
-
-        self.unlit_shader = self.createShader("shaders/vertex_light.txt", "shaders/fragment_light.txt")
-        glUseProgram(self.unlit_shader)
-        glUniformMatrix4fv(
-            glGetUniformLocation(self.unlit_shader,"projection"),
-            1, GL_FALSE, projection_transform
-        )
-
-        self.post_shader = self.createShader("shaders/simple_post_vertex.txt", "shaders/post_fragment.txt")
-
-        self.crt_shader = self.createShader("shaders/simple_post_vertex.txt", "shaders/crt_fragment.txt")
-
-        self.screen_shader = self.createShader("shaders/simple_post_vertex.txt", "shaders/screen_fragment.txt")
-
-    def query_shader_locations(self):
-
-        #attributes shared by both shaders
-        self.modelMatrixLocation = {}
-        self.viewMatrixLocation = {}
-        self.tintLoc = {}
-
-        glUseProgram(self.lighting_shader)
-        self.modelMatrixLocation["lit"] = glGetUniformLocation(self.lighting_shader, "model")
-        self.viewMatrixLocation["lit"] = glGetUniformLocation(self.lighting_shader, "view")
-        self.lightLocation = {
-            "position": [
-                glGetUniformLocation(self.lighting_shader, f"lightPos[{i}]")
-                for i in range(8)
-            ],
-            "color": [
-                glGetUniformLocation(self.lighting_shader, f"lights[{i}].color")
-                for i in range(8)
-            ],
-            "strength": [
-                glGetUniformLocation(self.lighting_shader, f"lights[{i}].strength")
-                for i in range(8)
-            ]
-        }
-        self.cameraPosLoc = glGetUniformLocation(self.lighting_shader, "viewPos")
-
-        glUseProgram(self.unlit_shader)
-        self.modelMatrixLocation["unlit"] = glGetUniformLocation(self.unlit_shader, "model")
-        self.viewMatrixLocation["unlit"] = glGetUniformLocation(self.unlit_shader, "view")
-        self.tintLoc["unlit"] = glGetUniformLocation(self.unlit_shader, "tint")
-
-        glUseProgram(self.screen_shader)
-        self.tintLoc["screen"] = glGetUniformLocation(self.screen_shader, "tint")
-
-    def create_assets(self):
-
-        glUseProgram(self.lighting_shader)
-        self.wood_texture = AdvancedMaterial("moss", "bmp")
-        self.cube_mesh = Mesh("models/monkey.obj")
-        #self.medkit_texture = AdvancedMaterial("medkit")
-        self.medkit_billboard = BillBoard(w = 0.6, h = 0.5)
-
-        glUseProgram(self.unlit_shader)
-        self.light_texture = Material("gfx/lightPlaceHolder.png")
-        self.light_billboard = BillBoard(w = 0.2, h = 0.1)
-
-        self.screen = TexturedQuad(0, 0, 1, 1)
-
-        self.font = Font()
-        self.fps_label = TextLine("FPS: ", self.font, (-0.9, 0.9), (0.05, 0.05))
-    
-    def createShader(self, vertexFilepath, fragmentFilepath):
-
-        with open(vertexFilepath,'r') as f:
-            vertex_src = f.readlines()
-
-        with open(fragmentFilepath,'r') as f:
-            fragment_src = f.readlines()
-        
-        shader = compileProgram(compileShader(vertex_src, GL_VERTEX_SHADER),
-                                compileShader(fragment_src, GL_FRAGMENT_SHADER),
-                            )
-        
-        return shader
-
-    def update_fps(self, new_fps):
-
-        self.fps_label.build_text(f"FPS: {new_fps}", self.font)
-    
-    def render(self, scene):
-        
-        #First pass
-        glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[0])
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glEnable(GL_DEPTH_TEST)
-
-        #lit shader
-        glUseProgram(self.lighting_shader)
-
-        glUniformMatrix4fv(self.viewMatrixLocation["lit"], 1, GL_FALSE, scene.player.viewTransform)
-
-        glUniform3fv(self.cameraPosLoc, 1, scene.player.position)
-
-        for i,light in enumerate(scene.lights):
-            glUniform3fv(self.lightLocation["position"][i], 1, light.position)
-            glUniform3fv(self.lightLocation["color"][i], 1, light.color)
-            glUniform1f(self.lightLocation["strength"][i], light.strength)
-
-        self.wood_texture.use()
-        glBindVertexArray(self.cube_mesh.vao)
-        for cube in scene.cubes:
-            glUniformMatrix4fv(self.modelMatrixLocation["lit"],1,GL_FALSE,cube.modelTransform)
-            glDrawArrays(GL_TRIANGLES, 0, self.cube_mesh.vertex_count)
-        
-        #self.medkit_texture.use()
-        glBindVertexArray(self.medkit_billboard.vao)
-        for medkit in scene.medkits:
-            glUniformMatrix4fv(self.modelMatrixLocation["lit"],1,GL_FALSE,medkit.modelTransform)
-            glDrawArrays(GL_TRIANGLES, 0, self.medkit_billboard.vertexCount)
-
-        #unlit shader
-        glUseProgram(self.unlit_shader)
-
-        glUniformMatrix4fv(self.viewMatrixLocation["unlit"], 1, GL_FALSE, scene.player.viewTransform)
-
-        self.light_texture.use()
-        glBindVertexArray(self.light_billboard.vao)
-        for i,light in enumerate(scene.lights):
-
-            glUniform3fv(self.tintLoc["unlit"], 1, light.color)
-            glUniformMatrix4fv(self.modelMatrixLocation["unlit"],1,GL_FALSE,light.modelTransform)
-            glDrawArrays(GL_TRIANGLES, 0, self.light_billboard.vertexCount)
-        
-        #Post processing pass
-        glUseProgram(self.screen_shader)
-        glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[0])
-        glDisable(GL_DEPTH_TEST)
-
-        glUniform4fv(self.tintLoc["screen"], 1, np.array([1.0, 0.0, 0.0, 1.0], dtype = np.float32))
-        self.font.use()
-        glBindVertexArray(self.fps_label.vao)
-        glDrawArrays(GL_TRIANGLES, 0, self.fps_label.vertex_count)
-
-        """
-        #Blit color buffer 1 onto color buffer 0
-        glUseProgram(self.screen_shader)
-        glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[0])
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glDisable(GL_DEPTH_TEST)
-
-
-        glBindTexture(GL_TEXTURE_2D, self.colorBuffers[1])
-        glActiveTexture(GL_TEXTURE0)
-        glBindVertexArray(self.screen.vao)
-        glDrawArrays(GL_TRIANGLES, 0, self.screen.vertex_count)
-        """
-
-        #CRT emulation pass
-        glUseProgram(self.post_shader)
-        glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[1])
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glDisable(GL_DEPTH_TEST)
-
-        glBindTexture(GL_TEXTURE_2D, self.colorBuffers[0])
-        glActiveTexture(GL_TEXTURE0)
-        glBindVertexArray(self.screen.vao)
-        glDrawArrays(GL_TRIANGLES, 0, self.screen.vertex_count)
-        
-        #Put the final result on screen
-        glUseProgram(self.screen_shader)
-        glBindFramebuffer(GL_FRAMEBUFFER, 0)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glDisable(GL_DEPTH_TEST)
-
-        glUniform4fv(self.tintLoc["screen"], 1, np.array([1.0, 1.0, 1.0, 1.0], dtype = np.float32))
-        glBindTexture(GL_TEXTURE_2D, self.colorBuffers[1])
-        glActiveTexture(GL_TEXTURE0)
-        glBindVertexArray(self.screen.vao)
-        glDrawArrays(GL_TRIANGLES, 0, self.screen.vertex_count)
-
-        pg.display.flip()
-
-    def destroy(self):
-
-        self.cube_mesh.destroy()
-        self.wood_texture.destroy()
-        self.medkit_billboard.destroy()
-        #self.medkit_texture.destroy()
-        self.light_billboard.destroy()
-        self.light_texture.destroy()
-        self.font.destroy()
-        self.fps_label.destroy()
-        glDeleteProgram(self.lighting_shader)
-        glDeleteProgram(self.unlit_shader)
-        glDeleteProgram(self.post_shader)
-        glDeleteTextures(len(self.colorBuffers), self.colorBuffers)
-        glDeleteRenderbuffers(len(self.depthStencilBuffers), self.depthStencilBuffers)
-        glDeleteFramebuffers(len(self.fbos), self.fbos)
-        pg.quit()
 
 class Mesh:
 
@@ -807,6 +161,706 @@ class Mesh:
     def destroy(self):
         glDeleteVertexArrays(1, (self.vao,))
         glDeleteBuffers(1,(self.vbo,))
+
+
+def groundCollider(z1, z2, x1, x2, y1, y2):
+        global beforeX
+        global beforeZ
+        global beforeY
+        global is_grounded, velocityY
+
+        # Check if inside the box at X-axis and Check if inside the box at Z-axis and Check if inside the box at Y-axis
+        if player.position[0] < x1 and player.position[0] > x2 and player.position[1] > z1 and player.position[1] < z2 and player.position[2] > y1 and player.position[2] < y2:
+             if beforeZ > z1 and beforeZ < z2 and beforeX < x1 and beforeX > x2:
+                is_grounded = True
+                if velocityY <= 0:
+                    velocityY = 0
+                player.position[2] = beforeY
+                return True
+                #Check if before collsiion z was in collider
+             if beforeZ > z1 and beforeZ < z2 :
+                player.position[0] = beforeX
+                #Check if before collsiion x was in collider
+             if beforeX < x1 and beforeX > x2 :
+                player.position[1] = beforeZ
+        return False
+
+class SimpleComponent:
+
+
+    def __init__(self,position, eulers):
+        
+        self.position = np.array(position, dtype=np.float32)
+        self.eulers = np.array(eulers, dtype=np.float32)
+        self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
+    
+    def update(self, rate):
+
+        self.eulers[1] += 0.25 * rate
+        if self.eulers[1] > 360:
+            self.eulers[1] -= 360
+        
+        self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
+        self.modelTransform = pyrr.matrix44.multiply(
+            m1=self.modelTransform, 
+            m2=pyrr.matrix44.create_from_eulers(
+                eulers=np.radians(self.eulers), dtype=np.float32
+            )
+        )
+        self.modelTransform = pyrr.matrix44.multiply(
+            m1=self.modelTransform, 
+            m2=pyrr.matrix44.create_from_translation(
+                vec=np.array(self.position),dtype=np.float32
+            )
+        )
+
+class NormalComponent:
+
+
+    def __init__(self, mesh , tex ,position, eulers):
+        self.mesh = mesh
+        self.tex = tex
+        self.position = np.array(position, dtype=np.float32)
+        self.eulers = np.array(eulers, dtype=np.float32)
+        self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
+    
+    def update(self, rate):
+
+        self.eulers[1] += 0.25 * rate
+        if self.eulers[1] > 360:
+            self.eulers[1] -= 360
+        
+        self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
+        self.modelTransform = pyrr.matrix44.multiply(
+            m1=self.modelTransform, 
+            m2=pyrr.matrix44.create_from_eulers(
+                eulers=np.radians(self.eulers), dtype=np.float32
+            )
+        )
+        self.modelTransform = pyrr.matrix44.multiply(
+            m1=self.modelTransform, 
+            m2=pyrr.matrix44.create_from_translation(
+                vec=np.array(self.position),dtype=np.float32
+            )
+        )
+        
+class BillBoardComponent:
+
+    def __init__(self, position):
+
+        self.position = np.array(position, dtype=np.float32)
+        self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
+    
+    def update(self, playerPosition):
+        
+        directionFromPlayer = self.position - playerPosition
+        angle1 = np.arctan2(-directionFromPlayer[1],directionFromPlayer[0])
+        dist2d = math.sqrt(directionFromPlayer[0] ** 2 + directionFromPlayer[1] ** 2)
+        angle2 = np.arctan2(directionFromPlayer[2],dist2d)
+
+        self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
+        self.modelTransform = pyrr.matrix44.multiply(
+            self.modelTransform,
+            pyrr.matrix44.create_from_y_rotation(theta=angle2, dtype=np.float32)
+        )
+        self.modelTransform = pyrr.matrix44.multiply(
+           self.modelTransform,
+            pyrr.matrix44.create_from_z_rotation(theta=angle1, dtype=np.float32)
+        )
+        self.modelTransform = pyrr.matrix44.multiply(
+            self.modelTransform,
+            pyrr.matrix44.create_from_translation(self.position,dtype=np.float32)
+        )
+
+class BrightBillboard:
+
+
+    def __init__(self, position, color, strength):
+
+        self.position = np.array(position, dtype=np.float32)
+        self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
+        self.color = np.array(color, dtype=np.float32)
+        self.strength = strength
+    
+    def update(self, playerPosition):
+        
+        directionFromPlayer = self.position - playerPosition
+        angle1 = np.arctan2(-directionFromPlayer[1],directionFromPlayer[0])
+        dist2d = math.sqrt(directionFromPlayer[0] ** 2 + directionFromPlayer[1] ** 2)
+        angle2 = np.arctan2(directionFromPlayer[2],dist2d)
+
+        self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
+        self.modelTransform = pyrr.matrix44.multiply(
+            self.modelTransform,
+            pyrr.matrix44.create_from_y_rotation(theta=angle2, dtype=np.float32)
+        )
+        self.modelTransform = pyrr.matrix44.multiply(
+           self.modelTransform,
+            pyrr.matrix44.create_from_z_rotation(theta=angle1, dtype=np.float32)
+        )
+        self.modelTransform = pyrr.matrix44.multiply(
+            self.modelTransform,
+            pyrr.matrix44.create_from_translation(self.position,dtype=np.float32)
+        )
+
+class Player:
+    global velocityY
+    velocityY = 0
+    def __init__(self, position):
+
+        self.position = np.array(position, dtype = np.float32)
+        self.theta = 0
+        self.phi = 0
+        self.update_vectors()
+    
+    def update_vectors(self):
+        
+        self.forwards = np.array(
+            [
+                np.cos(np.deg2rad(self.theta)) * np.cos(np.deg2rad(self.phi)),
+                np.sin(np.deg2rad(self.theta)) * np.cos(np.deg2rad(self.phi)),
+                np.sin(np.deg2rad(self.phi))
+            ],
+            dtype = np.float32
+        )
+
+        globalUp = np.array([0,0,1], dtype=np.float32)
+
+        self.right = np.cross(self.forwards, globalUp)
+
+        self.up = np.cross(self.right, self.forwards)
+
+        self.viewTransform = pyrr.matrix44.create_look_at(
+            eye = self.position,
+            target = self.position + self.forwards,
+            up = self.up, 
+            dtype = np.float32
+        )
+
+class Scene:
+
+
+    def __init__(self):
+
+        self.cubes = [
+            SimpleComponent(
+                position = [6,0,1],
+                eulers = [0,0,0]
+            ),
+        ]
+
+        self.medkits = [
+            BillBoardComponent(
+                position = [3,0,0.5]
+            )
+        ]
+
+        self.lights = [
+            BrightBillboard(
+                position = [
+                    1.0, 
+                    1.0, 
+                    1.0
+                ],
+                color = [
+                    1,1,1
+                ],
+                strength = 5
+            )
+            for i in range(8)
+        ]
+
+        self.player = Player(
+            position = [0,0,2]
+        )
+        global player
+        player = self.player
+
+    def update(self, rate):
+
+        for cube in self.cubes:
+            cube.update(rate)
+        
+        for medkit in self.medkits:
+            medkit.update(self.player.position)
+
+        for light in self.lights:
+            light.update(self.player.position)
+
+        
+        
+        global beforeX, beforeZ,beforeY
+        
+        global velocityY, is_grounded
+        is_grounded = False
+        
+        mapcolliders = [groundCollider(-2500, 2500, 2500, -2500, -1, 0)]
+
+        self.player.update_vectors()
+        
+        collide = False
+        for col in mapcolliders:
+             if col:
+                  collider = True
+
+        if not collide:
+             velocityY += -0.81 * (1/60) * (1/60)
+             self.player.position[2] += velocityY
+             beforePosz = self.player.position[1]
+             beforePosx = self.player.position[0]
+             beforePosy = self.player.position[2]
+    
+    def move_player(self, dPos):
+
+        dPos = np.array(dPos, dtype = np.float32)
+        
+        self.player.position += dPos
+    
+    def spin_player(self, dTheta, dPhi):
+
+        self.player.theta += dTheta
+        if self.player.theta > 360:
+            self.player.theta -= 360
+        elif self.player.theta < 0:
+            self.player.theta += 360
+        
+        self.player.phi = min(
+            89, max(-89, self.player.phi + dPhi)
+        )
+
+####################### Control ###############################################
+
+class App:
+
+
+    def __init__(self, screenWidth, screenHeight):
+
+        self.screenWidth = screenWidth
+        self.screenHeight = screenHeight
+
+        self.renderer = GraphicsEngine(screenWidth, screenHeight)
+
+        self.scene = Scene()
+
+        self.lastTime = pg.time.get_ticks()
+        self.currentTime = 0
+        self.numFrames = 0
+        self.frameTime = 0
+        self.lightCount = 0
+
+        self.mainLoop()
+
+    def mainLoop(self):
+        running = True
+        while (running):
+            #check events
+            for event in pg.event.get():
+                if (event.type == pg.QUIT):
+                    running = False
+                elif event.type == pg.KEYDOWN:
+                    if event.key == pg.K_ESCAPE:
+                        running = False
+            self.scene.update(self.frameTime * 0.05)
+            
+            
+            self.handleKeys()
+            self.handleMouse()
+
+            
+            self.renderer.render(self.scene)
+
+            #timing
+            self.calculateFramerate()
+        self.quit()
+
+    def handleKeys(self):
+
+        keys = pg.key.get_pressed()
+        combo = 0
+        directionModifier = 0
+        """
+        w: 1 -> 0 degrees
+        a: 2 -> 90 degrees
+        w & a: 3 -> 45 degrees
+        s: 4 -> 180 degrees
+        w & s: 5 -> x
+        a & s: 6 -> 135 degrees
+        w & a & s: 7 -> 90 degrees
+        d: 8 -> 270 degrees
+        w & d: 9 -> 315 degrees
+        a & d: 10 -> x
+        w & a & d: 11 -> 0 degrees
+        s & d: 12 -> 225 degrees
+        w & s & d: 13 -> 270 degrees
+        a & s & d: 14 -> 180 degrees
+        w & a & s & d: 15 -> x
+        """
+
+        if keys[pg.K_w]:
+            combo += 1
+        if keys[pg.K_a]:
+            combo += 2
+        if keys[pg.K_s]:
+            combo += 4
+        if keys[pg.K_d]:
+            combo += 8
+        
+        if combo > 0:
+            if combo == 3:
+                directionModifier = 45
+            elif combo == 2 or combo == 7:
+                directionModifier = 90
+            elif combo == 6:
+                directionModifier = 135
+            elif combo == 4 or combo == 14:
+                directionModifier = 180
+            elif combo == 12:
+                directionModifier = 225
+            elif combo == 8 or combo == 13:
+                directionModifier = 270
+            elif combo == 9:
+                directionModifier = 315
+            
+            dPos = [
+                self.frameTime * 0.001 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
+                self.frameTime * 0.001 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
+                0
+            ]
+
+            self.scene.move_player(dPos)
+        global is_grounded
+        
+        if is_grounded and keys[pg.K_SPACE]:
+            global velocityY
+            velocityY = .01
+
+    def handleMouse(self):
+
+        (x,y) = pg.mouse.get_pos()
+        
+        theta_increment = self.frameTime * 0.05 * ((self.screenWidth // 2) - x)
+        phi_increment = self.frameTime * 0.05 * ((self.screenHeight // 2) - y)
+        self.scene.spin_player(theta_increment, phi_increment)
+        pg.mouse.set_pos((self.screenWidth // 2,self.screenHeight // 2))
+
+    def calculateFramerate(self):
+
+        self.currentTime = pg.time.get_ticks()
+        delta = self.currentTime - self.lastTime
+        if (delta >= 1000):
+            framerate = max(1,int(1000.0 * self.numFrames/delta))
+            pg.display.set_caption(f"Echo window")
+            self.renderer.update_fps(framerate)
+            self.lastTime = self.currentTime
+            self.numFrames = -1
+            self.frameTime = float(1000.0 / max(1,framerate))
+        self.numFrames += 1
+
+    def quit(self):
+        
+        self.renderer.destroy()
+
+####################### View  #################################################
+
+class GraphicsEngine:
+
+
+    def __init__(self, screenWidth, screenHeight):
+
+        self.screenWidth = screenWidth
+        self.screenHeight = screenHeight
+
+        #initialise pygame
+        pg.init()
+        pg.mouse.set_visible(True)
+        pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
+        pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
+        pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK,
+                                    pg.GL_CONTEXT_PROFILE_CORE)
+        pg.display.set_mode((self.screenWidth,self.screenHeight), pg.OPENGL|pg.DOUBLEBUF)
+
+        #initialise opengl
+        glClearColor(0.0, 0.0, 0.0, 1)
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        self.create_framebuffers()
+
+        self.setup_shaders()
+
+        self.query_shader_locations()
+
+        self.create_assets()
+    
+    def create_framebuffers(self):
+        self.fbos = []
+        self.colorBuffers = []
+        self.depthStencilBuffers = []
+        for i in range(2):
+            self.fbos.append(glGenFramebuffers(1))
+            glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[i])
+        
+            self.colorBuffers.append(glGenTextures(1))
+            glBindTexture(GL_TEXTURE_2D, self.colorBuffers[i])
+            glTexImage2D(
+                GL_TEXTURE_2D, 0, GL_RGB, 
+                self.screenWidth, self.screenHeight,
+                0, GL_RGB, GL_UNSIGNED_BYTE, None
+            )
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+            glBindTexture(GL_TEXTURE_2D, 0)
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
+                                    GL_TEXTURE_2D, self.colorBuffers[i], 0)
+            
+            self.depthStencilBuffers.append(glGenRenderbuffers(1))
+            glBindRenderbuffer(GL_RENDERBUFFER, self.depthStencilBuffers[i])
+            glRenderbufferStorage(
+                GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, self.screenWidth, self.screenHeight
+            )
+            glBindRenderbuffer(GL_RENDERBUFFER,0)
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, 
+                                        GL_RENDERBUFFER, self.depthStencilBuffers[i])
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0)
+    
+    def setup_shaders(self):
+
+        projection_transform = pyrr.matrix44.create_perspective_projection(
+            fovy = 45, aspect = self.screenWidth/self.screenHeight, 
+            near = 0.1, far = 50, dtype=np.float32
+        )
+
+        self.lighting_shader = self.createShader("shaders/vertex.txt", "shaders/fragment.txt")
+        glUseProgram(self.lighting_shader)
+        glUniformMatrix4fv(
+            glGetUniformLocation(self.lighting_shader,"projection"),
+            1, GL_FALSE, projection_transform
+        )
+        glUniform1i(glGetUniformLocation(self.lighting_shader, "material.albedo"), 0)
+        glUniform1i(glGetUniformLocation(self.lighting_shader, "material.ao"), 1)
+        glUniform1i(glGetUniformLocation(self.lighting_shader, "material.specular"), 2)
+        glUniform1i(glGetUniformLocation(self.lighting_shader, "material.normal"), 3)
+
+        self.unlit_shader = self.createShader("shaders/vertex_light.txt", "shaders/fragment_light.txt")
+        glUseProgram(self.unlit_shader)
+        glUniformMatrix4fv(
+            glGetUniformLocation(self.unlit_shader,"projection"),
+            1, GL_FALSE, projection_transform
+        )
+
+        self.post_shader = self.createShader("shaders/simple_post_vertex.txt", "shaders/post_fragment.txt")
+
+        self.crt_shader = self.createShader("shaders/simple_post_vertex.txt", "shaders/crt_fragment.txt")
+
+        self.screen_shader = self.createShader("shaders/simple_post_vertex.txt", "shaders/screen_fragment.txt")
+
+    def query_shader_locations(self):
+
+        #attributes shared by both shaders
+        self.modelMatrixLocation = {}
+        self.viewMatrixLocation = {}
+        self.tintLoc = {}
+
+        glUseProgram(self.lighting_shader)
+        self.modelMatrixLocation["lit"] = glGetUniformLocation(self.lighting_shader, "model")
+        self.viewMatrixLocation["lit"] = glGetUniformLocation(self.lighting_shader, "view")
+        self.lightLocation = {
+            "position": [
+                glGetUniformLocation(self.lighting_shader, f"lightPos[{i}]")
+                for i in range(8)
+            ],
+            "color": [
+                glGetUniformLocation(self.lighting_shader, f"lights[{i}].color")
+                for i in range(8)
+            ],
+            "strength": [
+                glGetUniformLocation(self.lighting_shader, f"lights[{i}].strength")
+                for i in range(8)
+            ]
+        }
+        self.cameraPosLoc = glGetUniformLocation(self.lighting_shader, "viewPos")
+
+        glUseProgram(self.unlit_shader)
+        self.modelMatrixLocation["unlit"] = glGetUniformLocation(self.unlit_shader, "model")
+        self.viewMatrixLocation["unlit"] = glGetUniformLocation(self.unlit_shader, "view")
+        self.tintLoc["unlit"] = glGetUniformLocation(self.unlit_shader, "tint")
+
+        glUseProgram(self.screen_shader)
+        self.tintLoc["screen"] = glGetUniformLocation(self.screen_shader, "tint")
+
+    def create_assets(self):
+
+        glUseProgram(self.lighting_shader)
+        self.wood_texture = AdvancedMaterial("moss", "bmp")
+        self.cube_mesh = Mesh("models/monkey.obj")
+        self.n = Mesh("models/sphere.obj")
+        #self.medkit_texture = AdvancedMaterial("medkit")
+        self.medkit_billboard = BillBoard(w = 0.6, h = 0.5)
+
+        glUseProgram(self.unlit_shader)
+        self.light_texture = Material("gfx/lightPlaceHolder.png")
+        self.light_billboard = BillBoard(w = 0.2, h = 0.1)
+
+        self.screen = TexturedQuad(0, 0, 1, 1)
+        global TestGroup
+        TestGroup = [NormalComponent(
+                
+                mesh = self.cube_mesh,
+                tex = self.light_texture,
+                position = [6,0,1],
+                eulers = [0,0,0]
+            ),NormalComponent(
+                
+                mesh = self.n,
+                tex = self.wood_texture,
+                position = [6,0,1],
+                eulers = [0,0,0]
+            )]
+        
+        self.font = Font()
+        self.fps_label = TextLine("FPS: ", self.font, (-0.9, 0.9), (0.05, 0.05))
+    
+    def createShader(self, vertexFilepath, fragmentFilepath):
+
+        with open(vertexFilepath,'r') as f:
+            vertex_src = f.readlines()
+
+        with open(fragmentFilepath,'r') as f:
+            fragment_src = f.readlines()
+        
+        shader = compileProgram(compileShader(vertex_src, GL_VERTEX_SHADER),
+                                compileShader(fragment_src, GL_FRAGMENT_SHADER),
+                            )
+        
+        return shader
+
+    def update_fps(self, new_fps):
+
+        self.fps_label.build_text(f"FPS: {new_fps}", self.font)
+    
+    def render(self, scene):
+        global TestGroup
+        
+        for i in TestGroup:
+                
+                glUniformMatrix4fv(self.modelMatrixLocation["lit"],1,GL_FALSE,i.modelTransform)
+                glDrawArrays(GL_TRIANGLES, 0, i.mesh.vertex_count)
+                i.tex.use()
+        
+        #First pass
+        glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[0])
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glEnable(GL_DEPTH_TEST)
+
+        #lit shader
+        glUseProgram(self.lighting_shader)
+
+        glUniformMatrix4fv(self.viewMatrixLocation["lit"], 1, GL_FALSE, scene.player.viewTransform)
+
+        glUniform3fv(self.cameraPosLoc, 1, scene.player.position)
+
+        for i,light in enumerate(scene.lights):
+            glUniform3fv(self.lightLocation["position"][i], 1, light.position)
+            glUniform3fv(self.lightLocation["color"][i], 1, light.color)
+            glUniform1f(self.lightLocation["strength"][i], light.strength)
+
+        self.wood_texture.use()
+        glBindVertexArray(self.cube_mesh.vao)
+        
+        for cube in scene.cubes:
+            glUniformMatrix4fv(self.modelMatrixLocation["lit"],1,GL_FALSE,cube.modelTransform)
+            glDrawArrays(GL_TRIANGLES, 0, self.cube_mesh.vertex_count)
+        #CREATE_OBJECT(TestGroup)
+        #self.medkit_texture.use()
+        glBindVertexArray(self.medkit_billboard.vao)
+        for medkit in scene.medkits:
+            glUniformMatrix4fv(self.modelMatrixLocation["lit"],1,GL_FALSE,medkit.modelTransform)
+            glDrawArrays(GL_TRIANGLES, 0, self.medkit_billboard.vertexCount)
+
+        #unlit shader
+        glUseProgram(self.unlit_shader)
+
+        glUniformMatrix4fv(self.viewMatrixLocation["unlit"], 1, GL_FALSE, scene.player.viewTransform)
+
+        self.light_texture.use()
+        glBindVertexArray(self.light_billboard.vao)
+        for i,light in enumerate(scene.lights):
+
+            glUniform3fv(self.tintLoc["unlit"], 1, light.color)
+            glUniformMatrix4fv(self.modelMatrixLocation["unlit"],1,GL_FALSE,light.modelTransform)
+            glDrawArrays(GL_TRIANGLES, 0, self.light_billboard.vertexCount)
+        
+        #Post processing pass
+        glUseProgram(self.screen_shader)
+        glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[0])
+        glDisable(GL_DEPTH_TEST)
+
+        glUniform4fv(self.tintLoc["screen"], 1, np.array([1.0, 0.0, 0.0, 1.0], dtype = np.float32))
+        self.font.use()
+        glBindVertexArray(self.fps_label.vao)
+        glDrawArrays(GL_TRIANGLES, 0, self.fps_label.vertex_count)
+
+        """
+        #Blit color buffer 1 onto color buffer 0
+        glUseProgram(self.screen_shader)
+        glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[0])
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glDisable(GL_DEPTH_TEST)
+
+
+        glBindTexture(GL_TEXTURE_2D, self.colorBuffers[1])
+        glActiveTexture(GL_TEXTURE0)
+        glBindVertexArray(self.screen.vao)
+        glDrawArrays(GL_TRIANGLES, 0, self.screen.vertex_count)
+        """
+
+        #CRT emulation pass
+        glUseProgram(self.post_shader)
+        glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[1])
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glDisable(GL_DEPTH_TEST)
+
+        glBindTexture(GL_TEXTURE_2D, self.colorBuffers[0])
+        glActiveTexture(GL_TEXTURE0)
+        glBindVertexArray(self.screen.vao)
+        glDrawArrays(GL_TRIANGLES, 0, self.screen.vertex_count)
+        
+        #Put the final result on screen
+        glUseProgram(self.screen_shader)
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glDisable(GL_DEPTH_TEST)
+
+        glUniform4fv(self.tintLoc["screen"], 1, np.array([1.0, 1.0, 1.0, 1.0], dtype = np.float32))
+        glBindTexture(GL_TEXTURE_2D, self.colorBuffers[1])
+        glActiveTexture(GL_TEXTURE0)
+        glBindVertexArray(self.screen.vao)
+        glDrawArrays(GL_TRIANGLES, 0, self.screen.vertex_count)
+
+        pg.display.flip()
+
+    def destroy(self):
+
+        self.cube_mesh.destroy()
+        self.wood_texture.destroy()
+        self.medkit_billboard.destroy()
+        #self.medkit_texture.destroy()
+        self.light_billboard.destroy()
+        self.light_texture.destroy()
+        self.font.destroy()
+        self.fps_label.destroy()
+        glDeleteProgram(self.lighting_shader)
+        glDeleteProgram(self.unlit_shader)
+        glDeleteProgram(self.post_shader)
+        glDeleteTextures(len(self.colorBuffers), self.colorBuffers)
+        glDeleteRenderbuffers(len(self.depthStencilBuffers), self.depthStencilBuffers)
+        glDeleteFramebuffers(len(self.fbos), self.fbos)
+        pg.quit()
+
 
 class Material:
 
