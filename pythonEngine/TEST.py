@@ -17,12 +17,13 @@ global player
 class Mesh:
 
 
-    def __init__(self, filename):
+    def __init__(self, filename, tex, mod):
+        tex, mod = tex, mod
         # x, y, z, s, t, nx, ny, nz, tx, ty, tz, bx, by, bz
-        self.vertices = self.loadMesh(filename)
+        self.vertices = self.loadMesh(filename, tex, mod)
         self.vertex_count = len(self.vertices)//14
         self.vertices = np.array(self.vertices, dtype=np.float32)
-
+        
         self.vao = glGenVertexArrays(1)
         glBindVertexArray(self.vao)
         self.vbo = glGenBuffers(1)
@@ -50,8 +51,9 @@ class Mesh:
         glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 56, ctypes.c_void_p(offset))
         offset += 12
     
-    def loadMesh(self, filename):
+    def loadMesh(self, filename, tex, mod):
 
+        tex, mod = tex, mod
         #raw, unassembled data
         v = []
         vt = []
@@ -146,15 +148,15 @@ class Mesh:
                     bitangent.append(den * (-deltaUV2[0] * deltaPos1[2] + deltaUV1[0] * deltaPos2[2]))
                     for i in vertex_order:
                         for x in faceVertices[i]:
-                            vertices.append(x)
+                            vertices.append(x* mod) 
                         for x in faceTextures[i]:
-                            vertices.append(x)
+                            vertices.append(x* tex) 
                         for x in faceNormals[i]:
-                            vertices.append(x)
+                            vertices.append(x* tex) 
                         for x in tangent:
-                            vertices.append(x)
+                            vertices.append(x* tex) 
                         for x in bitangent:
-                            vertices.append(x)
+                            vertices.append(x* tex) 
                 line = f.readline()
         return vertices
     
@@ -196,9 +198,9 @@ class SimpleComponent:
     
     def update(self, rate):
 
-        self.eulers[1] += 0.25 * rate
-        if self.eulers[1] > 360:
-            self.eulers[1] -= 360
+        #self.eulers[1] += 0.25 * rate
+        #self.eulers[1] > 360:
+         #   self.eulers[1] -= 360
         
         self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
         self.modelTransform = pyrr.matrix44.multiply(
@@ -229,9 +231,7 @@ class NormalComponent:
         self.draw = draw
     def update(self, rate):
 
-        self.eulers[1] += 0.25 * rate
-        if self.eulers[1] > 360:
-            self.eulers[1] -= 360
+        
         
         self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
         self.modelTransform = pyrr.matrix44.multiply(
@@ -346,12 +346,7 @@ class Scene:
 
     def __init__(self):
 
-        self.cubes = [
-            SimpleComponent(
-                position = [6,0,1],
-                eulers = [0,0,0]
-            ),
-        ]
+       
 
         self.medkits = [
             BillBoardComponent(
@@ -369,7 +364,7 @@ class Scene:
                 color = [
                     1,1,1
                 ],
-                strength = 5
+                strength = 1
             )
             for i in range(8)
         ]
@@ -382,8 +377,7 @@ class Scene:
 
     def update(self, rate):
 
-        for cube in self.cubes:
-            cube.update(rate)
+        
         
         for medkit in self.medkits:
             medkit.update(self.player.position)
@@ -700,9 +694,10 @@ class GraphicsEngine:
     def create_assets(self):
 
         glUseProgram(self.lighting_shader)
-        self.wood_texture = AdvancedMaterial("moss", "bmp")
-        self.cube_mesh = Mesh("models/monkey.obj")
-        self.n = Mesh("models/sphere.obj")
+        self.wood_texture = AdvancedMaterial("Plaster", "jpg")
+        self.r = AdvancedMaterial("moss", "bmp")
+        self.cube_mesh = Mesh("models/officewall1.obj", 4, 1)
+        self.n = Mesh("models/sphere.obj", 0.5, 1)
         #self.medkit_texture = AdvancedMaterial("medkit")
         self.medkit_billboard = BillBoard(w = 0.6, h = 0.5)
 
@@ -712,18 +707,27 @@ class GraphicsEngine:
 
         self.screen = TexturedQuad(0, 0, 1, 1)
         global TestGroup
-        TestGroup = [NormalComponent(
+        TestGroup = [
+            NormalComponent(
+                
+                mesh = self.n,
+                tex = self.wood_texture,
+                position = [6,0,1],
+                eulers = [0,0,0],
+                draw = True
+            ),
+            NormalComponent(
                 
                 mesh = self.cube_mesh,
                 tex = self.light_texture,
-                position = [6,0,1],
+                position = [6,0,8],
                 eulers = [0,0,0],
                 draw = True
             ),NormalComponent(
                 
                 mesh = self.n,
-                tex = self.wood_texture,
-                position = [6,0,1],
+                tex = self.r,
+                position = [6,0,8],
                 eulers = [0,0,0],
                 draw = True
             ),]
@@ -771,9 +775,7 @@ class GraphicsEngine:
         self.wood_texture.use()
         glBindVertexArray(self.cube_mesh.vao)
         
-        for cube in scene.cubes:
-            glUniformMatrix4fv(self.modelMatrixLocation["lit"],1,GL_FALSE,cube.modelTransform)
-            glDrawArrays(GL_TRIANGLES, 0, self.cube_mesh.vertex_count)
+        
 
         global TestGroup
         
@@ -781,14 +783,14 @@ class GraphicsEngine:
         for nonscriptname in TestGroup:
 
                 
+                nonscriptname.tex.use()
                 if nonscriptname.r == 1:
                     nonscriptname.draw = False
-                glUniformMatrix4fv(self.modelMatrixLocation["lit"],1,GL_FALSE,nonscriptname.modelTransform)
                 
-                nonscriptname.tex.use()
                 if nonscriptname.draw == True:
                     glBindVertexArray(nonscriptname.mesh.vao)
                     glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
+                    glUniformMatrix4fv(self.modelMatrixLocation["lit"],1,GL_FALSE,nonscriptname.modelTransform)
 
         #CREATE_OBJECT(TestGroup)
         #self.medkit_texture.use()
@@ -1226,4 +1228,4 @@ class TextLine:
         glDeleteVertexArrays(1, (self.vao,))
         glDeleteBuffers(1,(self.vbo,))
 
-myApp = App(1200,800)
+myApp = App(1920,1080)
