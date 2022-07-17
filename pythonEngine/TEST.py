@@ -216,7 +216,7 @@ class SimpleComponent:
             )
         )
 
-class NormalComponent:
+class SlowComponent:
 
 
     def __init__(self, mesh , tex ,position, eulers, draw):
@@ -226,12 +226,14 @@ class NormalComponent:
         self.position = np.array(position, dtype=np.float32)
         self.eulers = np.array(eulers, dtype=np.float32)
         self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
-        self.r = random.randrange(0, 3)
+        self.r = 3
         print(self.r)
         self.draw = draw
     def update(self, rate):
 
-        
+        #self.eulers[1] += 0.25 * rate
+        #self.eulers[1] > 360:
+         #   self.eulers[1] -= 360
         
         self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
         self.modelTransform = pyrr.matrix44.multiply(
@@ -357,7 +359,7 @@ class Scene:
         self.lights = [
             BrightBillboard(
                 position = [
-                    1.0, 
+                    6.0, 
                     1.0, 
                     1.0
                 ],
@@ -377,7 +379,8 @@ class Scene:
 
     def update(self, rate):
 
-        
+        global TestGroup
+
         
         for medkit in self.medkits:
             medkit.update(self.player.position)
@@ -545,13 +548,13 @@ class App:
 
         self.currentTime = pg.time.get_ticks()
         delta = self.currentTime - self.lastTime
-        if (delta >= 60):
-            framerate = max(1,int(60.0 * self.numFrames/delta))
+        if (delta >= 120):
+            framerate = max(1,int(120.0 * self.numFrames/delta))
             pg.display.set_caption(f"Echo window")
             self.renderer.update_fps(framerate)
             self.lastTime = self.currentTime
             self.numFrames = -1
-            self.frameTime = float(60)
+            self.frameTime = float(120)
         self.numFrames += 1
 
     def quit(self):
@@ -706,34 +709,21 @@ class GraphicsEngine:
         self.light_billboard = BillBoard(w = 0.2, h = 0.1)
 
         self.screen = TexturedQuad(0, 0, 1, 1)
-        global TestGroup
-        TestGroup = [
-            NormalComponent(
-                
-                mesh = self.n,
-                tex = self.wood_texture,
-                position = [6,0,1],
-                eulers = [0,0,0],
-                draw = True
-            ),
-            NormalComponent(
-                
-                mesh = self.cube_mesh,
-                tex = self.light_texture,
-                position = [6,0,8],
-                eulers = [0,0,0],
-                draw = True
-            ),NormalComponent(
-                
-                mesh = self.n,
-                tex = self.r,
-                position = [6,0,8],
-                eulers = [0,0,0],
-                draw = True
-            ),]
         
         self.font = Font()
         self.fps_label = TextLine("FPS: ", self.font, (-0.9, 0.9), (0.05, 0.05))
+        global TestGroup
+        
+        TestGroup = [
+            
+            SlowComponent(
+                
+                mesh = self.cube_mesh,
+                tex = self.wood_texture,
+                position = [0,0,9],
+                eulers = [0,0,0],
+                draw = True
+            )]
     
     def createShader(self, vertexFilepath, fragmentFilepath):
 
@@ -750,7 +740,9 @@ class GraphicsEngine:
         return shader
 
     def update_fps(self, new_fps):
-
+        global TestGroup
+        for Tes in TestGroup:
+            Tes.update(60)
         self.fps_label.build_text(f"FPS: {new_fps}", self.font)
     
     def render(self, scene):
@@ -767,30 +759,49 @@ class GraphicsEngine:
 
         glUniform3fv(self.cameraPosLoc, 1, scene.player.position)
 
-        for i,light in enumerate(scene.lights):
-            glUniform3fv(self.lightLocation["position"][i], 1, light.position)
-            glUniform3fv(self.lightLocation["color"][i], 1, light.color)
-            glUniform1f(self.lightLocation["strength"][i], light.strength)
-
-        self.wood_texture.use()
-        glBindVertexArray(self.cube_mesh.vao)
-        
-        
-
         global TestGroup
         
         
         for nonscriptname in TestGroup:
 
                 
-                nonscriptname.tex.use()
+                
+                
                 if nonscriptname.r == 1:
                     nonscriptname.draw = False
                 
+                    
+
+                model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
+                model_transform = pyrr.matrix44.multiply(
+                    m1=model_transform, 
+                    m2=pyrr.matrix44.create_from_eulers(
+                        eulers=np.radians(nonscriptname.eulers), dtype=np.float32
+                    )
+                )
+                model_transform = pyrr.matrix44.multiply(
+                    m1=model_transform, 
+                    m2=pyrr.matrix44.create_from_translation(
+                        vec=np.array(nonscriptname.position),dtype=np.float32
+                    )
+                )
+                glUniformMatrix4fv(self.modelMatrixLocation["lit"],1,GL_FALSE,nonscriptname.modelTransform)
+                
+                nonscriptname.tex.use()
+                glBindVertexArray(nonscriptname.mesh.vao)
                 if nonscriptname.draw == True:
-                    glBindVertexArray(nonscriptname.mesh.vao)
                     glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
-                    glUniformMatrix4fv(self.modelMatrixLocation["lit"],1,GL_FALSE,nonscriptname.modelTransform)
+                
+        for i,light in enumerate(scene.lights):
+            glUniform3fv(self.lightLocation["position"][i], 1, light.position)
+            glUniform3fv(self.lightLocation["color"][i], 1, light.color)
+            glUniform1f(self.lightLocation["strength"][i], light.strength)
+
+        #self.wood_texture.use()
+        #glBindVertexArray(self.cube_mesh.vao)
+        
+        
+
 
         #CREATE_OBJECT(TestGroup)
         #self.medkit_texture.use()
