@@ -179,13 +179,18 @@ def groundCollider(z1, z2, x1, x2, y1, y2):
                 if velocityY <= 0:
                     velocityY = 0
                 player.position[2] = beforeY
-                return True
+                print("COLLIDER Y")
+                
+
                 #Check if before collsiion z was in collider
              if beforeZ > z1 and beforeZ < z2 :
                 player.position[0] = beforeX
+                
                 #Check if before collsiion x was in collider
              if beforeX < x1 and beforeX > x2 :
                 player.position[1] = beforeZ
+             return True
+
         return False
 
 class SimpleComponent:
@@ -199,9 +204,9 @@ class SimpleComponent:
     
     def update(self, rate):
 
-        #self.eulers[1] += 0.25 * rate
-        #self.eulers[1] > 360:
-         #   self.eulers[1] -= 360
+        self.eulers[1] += 0.25 * rate
+        if self.eulers[1] > 360:
+            self.eulers[1] -= 360
         
         self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
         self.modelTransform = pyrr.matrix44.multiply(
@@ -342,15 +347,14 @@ class Scene:
         ]
 
         self.player = Player(
-            position = [0,0,2]
+            position = [0,0,10]
         )
         global player
         player = self.player
 
     def update(self, rate):
-
+        
         global TestGroup
-
         
         for medkit in self.medkits:
             medkit.update(self.player.position)
@@ -360,30 +364,32 @@ class Scene:
 
         
         
-        global beforeX, beforeZ,beforeY
+        global beforeX
+        global beforeZ
+        global beforeY
         
         global velocityY, is_grounded
         is_grounded = False
         global mapcolliders
         mapcolliders = [groundCollider(-2500, 2500, 2500, -2500, -1, 0)]
         for i in TestGroup:
-            mapcolliders.append(groundCollider(i.position[0] - 2, i.position[0] + 2, i.position[1] + 2,  i.position[1] - 2, -1, 0))
+            mapcolliders.append(groundCollider(i.position[0] - 2, i.position[0] + 2, i.position[1] + 2,  i.position[1] - 2, -5, 5))
             
-
         self.player.update_vectors()
         
         collide = False
         for col in mapcolliders:
-             if col:
-                  collider = True
-
+            if col:
+                collide = True
+        
         if not collide:
-             velocityY += -0.2 * (1/60) * (1/60)
-             self.player.position[2] += velocityY
-             beforePosz = self.player.position[1]
-             beforePosx = self.player.position[0]
-             beforePosy = self.player.position[2]
-    
+             velocityY += -2.2 * (1/60) * (1/60)
+
+             beforeZ = self.player.position[1]
+             beforeX = self.player.position[0]
+             beforeY = self.player.position[2]
+        self.player.position[2] += velocityY
+        
     def move_player(self, dPos):
 
         dPos = np.array(dPos, dtype = np.float32)
@@ -415,8 +421,7 @@ class SlowComponent:
         self.position = np.array(position, dtype=np.float32)
         self.eulers = np.array(eulers, dtype=np.float32)
         self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
-        self.r = random.randrange(1, 7)
-        print(self.r)
+        self.r = random.randrange(1, 2)
         self.draw = draw
         
         
@@ -543,14 +548,14 @@ class App:
         
         if is_grounded and keys[pg.K_SPACE]:
             global velocityY
-            velocityY = .01
+            velocityY = .05
 
     def handleMouse(self):
 
         (x,y) = pg.mouse.get_pos()
         
-        theta_increment = self.frameTime * 0.05 * ((self.screenWidth // 2) - x)
-        phi_increment = self.frameTime * 0.05 * ((self.screenHeight // 2) - y)
+        theta_increment = self.frameTime * 0.0025 * ((self.screenWidth // 2) - x)
+        phi_increment = self.frameTime * 0.0025 * ((self.screenHeight // 2) - y)
         self.scene.spin_player(theta_increment, phi_increment)
         pg.mouse.set_pos((self.screenWidth // 2,self.screenHeight // 2))
 
@@ -726,9 +731,7 @@ class GraphicsEngine:
         
         
         TestGroup = []
-        for i in range (9):
-            print("aaa")
-           
+        for i in range (2):           
             
         
             TestGroup.append(
@@ -893,7 +896,6 @@ class GraphicsEngine:
                 glBindVertexArray(nonscriptname.mesh.vao)
                 if nonscriptname.draw == True:
                     glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
-        print(player.position, nonscriptname.position[0]- 2, -nonscriptname.position[0] + 2, -nonscriptname.position[1] + 2,  nonscriptname.position[1] - 2, -50, 50)
         for i,light in enumerate(scene.lights):
             glUniform3fv(self.lightLocation["position"][i], 1, light.position)
             glUniform3fv(self.lightLocation["color"][i], 1, light.color)
