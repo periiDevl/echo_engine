@@ -1,3 +1,4 @@
+from turtle import pos
 import pygame as pg
 from OpenGL.GL import *
 from OpenGL.GL.shaders import compileProgram,compileShader
@@ -216,38 +217,7 @@ class SimpleComponent:
             )
         )
 
-class SlowComponent:
 
-
-    def __init__(self, mesh , tex ,position, eulers, draw):
-        
-        self.mesh = mesh
-        self.tex = tex
-        self.position = np.array(position, dtype=np.float32)
-        self.eulers = np.array(eulers, dtype=np.float32)
-        self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
-        self.r = 3
-        print(self.r)
-        self.draw = draw
-    def update(self, rate):
-
-        #self.eulers[1] += 0.25 * rate
-        #self.eulers[1] > 360:
-         #   self.eulers[1] -= 360
-        
-        self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
-        self.modelTransform = pyrr.matrix44.multiply(
-            m1=self.modelTransform, 
-            m2=pyrr.matrix44.create_from_eulers(
-                eulers=np.radians(self.eulers), dtype=np.float32
-            )
-        )
-        self.modelTransform = pyrr.matrix44.multiply(
-            m1=self.modelTransform, 
-            m2=pyrr.matrix44.create_from_translation(
-                vec=np.array(self.position),dtype=np.float32
-            )
-        )
         
         
 class BillBoardComponent:
@@ -394,8 +364,11 @@ class Scene:
         
         global velocityY, is_grounded
         is_grounded = False
-        
+        global mapcolliders
         mapcolliders = [groundCollider(-2500, 2500, 2500, -2500, -1, 0)]
+        for i in TestGroup:
+            mapcolliders.append(groundCollider(i.position[0] - 2, i.position[0] + 2, i.position[1] + 2,  i.position[1] - 2, -1, 0))
+            
 
         self.player.update_vectors()
         
@@ -430,6 +403,43 @@ class Scene:
         )
 
 ####################### Control ###############################################
+
+
+class SlowComponent:
+
+
+    def __init__(self, mesh , tex ,position, eulers, draw):
+        global mapcolliders
+        self.mesh = mesh
+        self.tex = tex
+        self.position = np.array(position, dtype=np.float32)
+        self.eulers = np.array(eulers, dtype=np.float32)
+        self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
+        self.r = random.randrange(1, 7)
+        print(self.r)
+        self.draw = draw
+        
+        
+    def update(self, rate):
+
+        #self.eulers[1] += 0.25 * rate
+        #self.eulers[1] > 360:
+         #   self.eulers[1] -= 360
+        
+        self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
+        self.modelTransform = pyrr.matrix44.multiply(
+            m1=self.modelTransform, 
+            m2=pyrr.matrix44.create_from_eulers(
+                eulers=np.radians(self.eulers), dtype=np.float32
+            )
+        )
+        self.modelTransform = pyrr.matrix44.multiply(
+            m1=self.modelTransform, 
+            m2=pyrr.matrix44.create_from_translation(
+                vec=np.array(self.position),dtype=np.float32
+            )
+        )
+
 
 class App:
 
@@ -633,7 +643,7 @@ class GraphicsEngine:
 
         projection_transform = pyrr.matrix44.create_perspective_projection(
             fovy = 45, aspect = self.screenWidth/self.screenHeight, 
-            near = 0.1, far = 50, dtype=np.float32
+            near = 0.1, far = 200, dtype=np.float32
         )
 
         self.lighting_shader = self.createShader("shaders/vertex.txt", "shaders/fragment.txt")
@@ -714,16 +724,103 @@ class GraphicsEngine:
         self.fps_label = TextLine("FPS: ", self.font, (-0.9, 0.9), (0.05, 0.05))
         global TestGroup
         
-        TestGroup = [
+        
+        TestGroup = []
+        for i in range (9):
+            print("aaa")
+           
             
-            SlowComponent(
+        
+            TestGroup.append(
+                SlowComponent(
                 
                 mesh = self.cube_mesh,
                 tex = self.wood_texture,
-                position = [0,0,9],
+                position = [-10 + i * 4.62,-25,0],
                 eulers = [0,0,0],
                 draw = True
-            )]
+            )),
+            
+
+            TestGroup.append(
+                SlowComponent(
+                
+                mesh = self.cube_mesh,
+                tex = self.wood_texture,
+                position = [-10 + i * 4.62,-16,0],
+                eulers = [0,0,0],
+                draw = True
+            )),
+
+            TestGroup.append(
+                SlowComponent(
+                
+                mesh = self.cube_mesh,
+                tex = self.wood_texture,
+                position = [-10 + i * 4.62,-11.5,0],
+                eulers = [0,0,0],
+                draw = True
+            )),
+
+            TestGroup.append(
+                SlowComponent(
+                
+                mesh = self.cube_mesh,
+                tex = self.wood_texture,
+                position = [-10 + i * 4.62,-7,0],
+                eulers = [0,0,0],
+                draw = True
+            )),
+
+            TestGroup.append(
+                SlowComponent(
+                
+                mesh = self.cube_mesh,
+                tex = self.wood_texture,
+                position = [-10 + i * 4.62,-2.5,0],
+                eulers = [0,0,0],
+                draw = True
+            )),
+
+            TestGroup.append(
+                SlowComponent(
+                
+                mesh = self.cube_mesh,
+                tex = self.wood_texture,
+                position = [-10 + i * 4.62,2,0],
+                eulers = [0,0,0],
+                draw = True
+            )),
+
+            TestGroup.append(
+                SlowComponent(
+                
+                mesh = self.cube_mesh,
+                tex = self.wood_texture,
+                position = [-10 + i * 4.62,6.5,0],
+                eulers = [0,0,0],
+                draw = True
+            )),
+
+            TestGroup.append(
+                SlowComponent(
+                
+                mesh = self.cube_mesh,
+                tex = self.wood_texture,
+                position = [-10 + i * 4.62,11,0],
+                eulers = [0,0,0],
+                draw = True
+            )),
+
+            TestGroup.append(
+                SlowComponent(
+                
+                mesh = self.cube_mesh,
+                tex = self.wood_texture,
+                position = [-10 + i * 4.62,-20.5,0],
+                eulers = [0,0,0],
+                draw = True
+            ),)
     
     def createShader(self, vertexFilepath, fragmentFilepath):
 
@@ -742,11 +839,13 @@ class GraphicsEngine:
     def update_fps(self, new_fps):
         global TestGroup
         for Tes in TestGroup:
-            Tes.update(60)
+            Tes.update(120)
         self.fps_label.build_text(f"FPS: {new_fps}", self.font)
     
+    
     def render(self, scene):
-                
+       
+        
         #First pass
         glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[0])
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -763,11 +862,14 @@ class GraphicsEngine:
         
         
         for nonscriptname in TestGroup:
-
                 
                 
+                #mapcolliders = [groundCollider(-2500, 2500, 2500, -2500, -1, 0)]
                 
                 if nonscriptname.r == 1:
+                    nonscriptname.draw = True
+
+                else:
                     nonscriptname.draw = False
                 
                     
@@ -791,7 +893,7 @@ class GraphicsEngine:
                 glBindVertexArray(nonscriptname.mesh.vao)
                 if nonscriptname.draw == True:
                     glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
-                
+        print(player.position, nonscriptname.position[0]- 2, -nonscriptname.position[0] + 2, -nonscriptname.position[1] + 2,  nonscriptname.position[1] - 2, -50, 50)
         for i,light in enumerate(scene.lights):
             glUniform3fv(self.lightLocation["position"][i], 1, light.position)
             glUniform3fv(self.lightLocation["color"][i], 1, light.color)
@@ -861,6 +963,7 @@ class GraphicsEngine:
         #Put the final result on screen
         glUseProgram(self.screen_shader)
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
+               
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glDisable(GL_DEPTH_TEST)
 
@@ -1137,6 +1240,7 @@ class Font:
         img_data = pg.image.tostring(image,'RGBA')
         glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,image_width,image_height,0,GL_RGBA,GL_UNSIGNED_BYTE,img_data)
         glGenerateMipmap(GL_TEXTURE_2D)
+        
     
     def get_bounding_box(self, letter):
 
@@ -1239,4 +1343,4 @@ class TextLine:
         glDeleteVertexArrays(1, (self.vao,))
         glDeleteBuffers(1,(self.vbo,))
 
-myApp = App(1920,1080)
+myApp = App(800,600)
