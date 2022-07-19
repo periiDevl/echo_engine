@@ -402,9 +402,9 @@ class Scene:
         is_grounded = False
         global mapcolliders
         mapcolliders = [groundCollider(-2500, 2500, 2500, -2500, -1, 0),
-        groundCollider(-1.59,-1.05 ,1.55,-6.54,-1, 10),]
-        for i in TestGroup:
-            mapcolliders.append(groundCollider(i.position[0] - 2, i.position[0] + 2, i.position[1] + 2,  i.position[1] - 2, -1, 0))
+        groundCollider(-1.59,-1.05 ,1.55,-6.54,-1, 10),
+        groundCollider(-1.59,3.9,-6.06,-6.58,-1, 10),]
+        
             
 
         self.player.update_vectors()
@@ -416,7 +416,7 @@ class Scene:
 
         if not is_grounded:
              velocityY += -0.2 * (1/60) * (1/60)
-             print("resetBeforePoses")
+             print(player.position)
              beforeZ = self.player.position[1]
              beforeX = self.player.position[0]
              beforeY = self.player.position[2]
@@ -571,8 +571,8 @@ class App:
                 directionModifier = 315
             
             dPos = [
-                self.frameTime * 0.001 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
-                self.frameTime * 0.001 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
+                self.frameTime * 0.003 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
+                self.frameTime * 0.003 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
                 0
             ]
 
