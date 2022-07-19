@@ -334,14 +334,14 @@ class Scene:
         self.lights = [
             BrightBillboard(
                 position = [
-                    6.0, 
-                    1.0, 
-                    1.0
+                    0.0, 
+                    0.0, 
+                    0.0
                 ],
                 color = [
                     1,1,1
                 ],
-                strength = 1
+                strength = 3
             )
             for i in range(8)
         ]
@@ -383,6 +383,7 @@ class Scene:
                 collide = True
         
         if not collide:
+<<<<<<< HEAD
              velocityY += -2.2 * (1/60) * (1/60)
 
              beforeZ = self.player.position[1]
@@ -390,6 +391,14 @@ class Scene:
              beforeY = self.player.position[2]
         self.player.position[2] += velocityY
         
+=======
+             velocityY += -0.2 * (1/120) * (1/120)
+             self.player.position[2] += velocityY
+             beforePosz = self.player.position[1]
+             beforePosx = self.player.position[0]
+             beforePosy = self.player.position[2]
+    
+>>>>>>> 1373d8cfabf4e44a676466b70a8ae336ab837c23
     def move_player(self, dPos):
 
         dPos = np.array(dPos, dtype = np.float32)
@@ -421,7 +430,11 @@ class SlowComponent:
         self.position = np.array(position, dtype=np.float32)
         self.eulers = np.array(eulers, dtype=np.float32)
         self.modelTransform = pyrr.matrix44.create_identity(dtype=np.float32)
+<<<<<<< HEAD
         self.r = random.randrange(1, 2)
+=======
+        
+>>>>>>> 1373d8cfabf4e44a676466b70a8ae336ab837c23
         self.draw = draw
         
         
@@ -554,8 +567,13 @@ class App:
 
         (x,y) = pg.mouse.get_pos()
         
+<<<<<<< HEAD
         theta_increment = self.frameTime * 0.0025 * ((self.screenWidth // 2) - x)
         phi_increment = self.frameTime * 0.0025 * ((self.screenHeight // 2) - y)
+=======
+        theta_increment = self.frameTime * 0.045 * ((self.screenWidth // 2) - x)
+        phi_increment = self.frameTime * 0.045 * ((self.screenHeight // 2) - y)
+>>>>>>> 1373d8cfabf4e44a676466b70a8ae336ab837c23
         self.scene.spin_player(theta_increment, phi_increment)
         pg.mouse.set_pos((self.screenWidth // 2,self.screenHeight // 2))
 
@@ -569,7 +587,7 @@ class App:
             self.renderer.update_fps(framerate)
             self.lastTime = self.currentTime
             self.numFrames = -1
-            self.frameTime = float(120)
+            self.frameTime = float(120.0 / max(1,framerate))
         self.numFrames += 1
 
     def quit(self):
@@ -700,6 +718,9 @@ class GraphicsEngine:
             ]
         }
         self.cameraPosLoc = glGetUniformLocation(self.lighting_shader, "viewPos")
+        
+       
+        
 
         glUseProgram(self.unlit_shader)
         self.modelMatrixLocation["unlit"] = glGetUniformLocation(self.unlit_shader, "model")
@@ -712,10 +733,14 @@ class GraphicsEngine:
     def create_assets(self):
 
         glUseProgram(self.lighting_shader)
-        self.wood_texture = AdvancedMaterial("Plaster", "jpg")
-        self.r = AdvancedMaterial("moss", "bmp")
-        self.cube_mesh = Mesh("models/officewall1.obj", 4, 1)
-        self.n = Mesh("models/sphere.obj", 0.5, 1)
+        self.wood_texture = AdvancedMaterial("/woodFloor/WoodFloor", "jpg")
+        self.wall_texture = AdvancedMaterial("/brick/wall", "jpg")
+        
+        
+        self.floor = Mesh("models/floor.obj", 14, 2)
+        self.walls = Mesh("models/walls.obj", 8, 2)
+        
+        
         #self.medkit_texture = AdvancedMaterial("medkit")
         self.medkit_billboard = BillBoard(w = 0.6, h = 0.5)
 
@@ -730,100 +755,31 @@ class GraphicsEngine:
         global TestGroup
         
         
+<<<<<<< HEAD
         TestGroup = []
         for i in range (2):           
+=======
+        TestGroup = [
+            SlowComponent(
+                
+                mesh = self.walls,
+                tex = self.wall_texture,
+                position = [0,0,4],
+                eulers = [90,0,0],
+                draw = True
+            ),
+>>>>>>> 1373d8cfabf4e44a676466b70a8ae336ab837c23
             
+            SlowComponent(
+                
+                mesh = self.floor,
+                tex = self.wood_texture,
+                position = [0,0,-1.5],
+                eulers = [90,0,0],
+                draw = True
+            ),
+            ]
         
-            TestGroup.append(
-                SlowComponent(
-                
-                mesh = self.cube_mesh,
-                tex = self.wood_texture,
-                position = [-10 + i * 4.62,-25,0],
-                eulers = [0,0,0],
-                draw = True
-            )),
-            
-
-            TestGroup.append(
-                SlowComponent(
-                
-                mesh = self.cube_mesh,
-                tex = self.wood_texture,
-                position = [-10 + i * 4.62,-16,0],
-                eulers = [0,0,0],
-                draw = True
-            )),
-
-            TestGroup.append(
-                SlowComponent(
-                
-                mesh = self.cube_mesh,
-                tex = self.wood_texture,
-                position = [-10 + i * 4.62,-11.5,0],
-                eulers = [0,0,0],
-                draw = True
-            )),
-
-            TestGroup.append(
-                SlowComponent(
-                
-                mesh = self.cube_mesh,
-                tex = self.wood_texture,
-                position = [-10 + i * 4.62,-7,0],
-                eulers = [0,0,0],
-                draw = True
-            )),
-
-            TestGroup.append(
-                SlowComponent(
-                
-                mesh = self.cube_mesh,
-                tex = self.wood_texture,
-                position = [-10 + i * 4.62,-2.5,0],
-                eulers = [0,0,0],
-                draw = True
-            )),
-
-            TestGroup.append(
-                SlowComponent(
-                
-                mesh = self.cube_mesh,
-                tex = self.wood_texture,
-                position = [-10 + i * 4.62,2,0],
-                eulers = [0,0,0],
-                draw = True
-            )),
-
-            TestGroup.append(
-                SlowComponent(
-                
-                mesh = self.cube_mesh,
-                tex = self.wood_texture,
-                position = [-10 + i * 4.62,6.5,0],
-                eulers = [0,0,0],
-                draw = True
-            )),
-
-            TestGroup.append(
-                SlowComponent(
-                
-                mesh = self.cube_mesh,
-                tex = self.wood_texture,
-                position = [-10 + i * 4.62,11,0],
-                eulers = [0,0,0],
-                draw = True
-            )),
-
-            TestGroup.append(
-                SlowComponent(
-                
-                mesh = self.cube_mesh,
-                tex = self.wood_texture,
-                position = [-10 + i * 4.62,-20.5,0],
-                eulers = [0,0,0],
-                draw = True
-            ),)
     
     def createShader(self, vertexFilepath, fragmentFilepath):
 
@@ -860,6 +816,11 @@ class GraphicsEngine:
         glUniformMatrix4fv(self.viewMatrixLocation["lit"], 1, GL_FALSE, scene.player.viewTransform)
 
         glUniform3fv(self.cameraPosLoc, 1, scene.player.position)
+        
+        
+        
+        
+        
 
         global TestGroup
         
@@ -869,11 +830,7 @@ class GraphicsEngine:
                 
                 #mapcolliders = [groundCollider(-2500, 2500, 2500, -2500, -1, 0)]
                 
-                if nonscriptname.r == 1:
-                    nonscriptname.draw = True
-
-                else:
-                    nonscriptname.draw = False
+                
                 
                     
 
@@ -953,6 +910,7 @@ class GraphicsEngine:
 
         #CRT emulation pass
         glUseProgram(self.post_shader)
+        
         glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[1])
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glDisable(GL_DEPTH_TEST)
@@ -979,7 +937,8 @@ class GraphicsEngine:
 
     def destroy(self):
 
-        self.cube_mesh.destroy()
+        self.floor.destroy()
+        self.wall_texture.destroy()
         self.wood_texture.destroy()
         self.medkit_billboard.destroy()
         #self.medkit_texture.destroy()
