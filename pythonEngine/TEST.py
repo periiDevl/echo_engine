@@ -1,4 +1,7 @@
-from turtle import pos
+from glob import glob
+from operator import truediv
+from re import A
+from turtle import pos, speed
 import pygame as pg
 from OpenGL.GL import *
 from OpenGL.GL.shaders import compileProgram,compileShader
@@ -6,14 +9,17 @@ import numpy as np
 import pyrr
 import math
 import random
+from tkinter import *
 ####################### Model #################################################
 global beforeX, beforeZ, beforeY, is_grounded
 beforeX = 0
 beforeY = 0
 beforeZ = 0
+import config
 is_grounded = False
 global player
-
+global EDITOR_MODE
+EDITOR_MODE = config.EDITOR_MODE
 
 class Mesh:
 
@@ -174,7 +180,7 @@ def groundCollider(z1, z2, x1, x2, y1, y2):
 
         # Check if inside the box at X-axis and Check if inside the box at Z-axis and Check if inside the box at Y-axis
         if player.position[0] < x1 and player.position[0] > x2 and player.position[1] > z1 and player.position[1] < z2 and player.position[2] > y1 and player.position[2] < y2:
-             if beforeZ > z1 and beforeZ < z2 and beforeX < x1 and beforeX > x2:
+             if beforeZ > z1 and beforeZ < z2 and beforeX < x1 and beforeX > x2 and player.position[2]:
                 is_grounded = True
                 if velocityY <= 0:
                     velocityY = 0
@@ -194,32 +200,7 @@ def groundCollider(z1, z2, x1, x2, y1, y2):
         return False
 
 
-def Collider(z1, z2, x1, x2):
-        global beforeX
-        global beforeZ
-        
-        
 
-        # Check if inside the box at X-axis and Check if inside the box at Z-axis and Check if inside the box at Y-axis
-        if player.position[0] < x1 and player.position[0] > x2 and player.position[1] > z1 and player.position[1] < z2:
-             
-            if beforeZ > z1 and beforeZ < z2 and beforeX < x1 and beforeX > x2:
-                
-                if velocityY <= 0:
-                    velocityY = 0
-                
-                
-
-                #Check if before collsiion z was in collider
-            if beforeZ > z1 and beforeZ < z2 :
-                player.position[0] = beforeX
-                
-                #Check if before collsiion x was in collider
-            if beforeX < x1 and beforeX > x2 :
-                player.position[1] = beforeZ
-            return True
-
-        return False
                 
 
              
@@ -386,7 +367,7 @@ class Scene:
     def update(self, rate):
 
         global TestGroup
-
+        T = False
         
         for medkit in self.medkits:
             medkit.update(self.player.position)
@@ -401,26 +382,31 @@ class Scene:
         global velocityY, is_grounded
         is_grounded = False
         global mapcolliders
-        mapcolliders = [groundCollider(-2500, 2500, 2500, -2500, -1, 0),
-        groundCollider(-1.59,-1.05 ,1.55,-6.54,-1, 10),
-        groundCollider(-1.59,3.9,-6.06,-6.58,-1, 10),]
+
+        if EDITOR_MODE == True:
+            mapcolliders = []
+        else:
+            mapcolliders = [groundCollider(-2500, 2500, 2500, -2500, -1, 0),
+            groundCollider(-1.59,-1.05 ,1.55,-6.54,-1, 10),
+            groundCollider(-1.59,3.9,-6.06,-6.58,-1, 10),
+            groundCollider(1.037,1.552,1.547, -3.87, -1, 10),]
         
             
+        
 
         self.player.update_vectors()
-        
-        collide = False
-        for col in mapcolliders:
-             if col:
-                  collide = True
+        if EDITOR_MODE == False:
+            collide = False
+            for col in mapcolliders:
+                if col:
+                    collide = True
 
-        if not is_grounded:
-             velocityY += -0.2 * (1/60) * (1/60)
-             print(player.position)
-             beforeZ = self.player.position[1]
-             beforeX = self.player.position[0]
-             beforeY = self.player.position[2]
-        self.player.position[2] += velocityY
+            if not is_grounded:
+                velocityY += -0.2 * (1/60) * (1/60)
+                beforeZ = self.player.position[1]
+                beforeX = self.player.position[0]
+                beforeY = self.player.position[2]
+            self.player.position[2] += velocityY
 
     
     def move_player(self, dPos):
@@ -499,7 +485,10 @@ class App:
 
         self.mainLoop()
 
+
+    
     def mainLoop(self):
+        
         running = True
         while (running):
             #check events
@@ -520,10 +509,14 @@ class App:
 
             #timing
             self.calculateFramerate()
+
+           
+            
         self.quit()
 
     def handleKeys(self):
-
+        global EDITOR_MODE
+        global is_grounded
         keys = pg.key.get_pressed()
         combo = 0
         directionModifier = 0
@@ -570,22 +563,53 @@ class App:
             elif combo == 9:
                 directionModifier = 315
             
-            dPos = [
-                self.frameTime * 0.003 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
-                self.frameTime * 0.003 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
-                0
-            ]
+            if is_grounded == False and EDITOR_MODE == False:
+                dPos = [
+                    self.frameTime * 0.0007 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
+                    self.frameTime * 0.0007 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
+                    0
+                ]
+            else:
+                dPos = [
+                    self.frameTime * 0.002 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
+                    self.frameTime * 0.002 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
+                    0
+                ]
 
+
+            if EDITOR_MODE == True:
+                dPos = [
+                    self.frameTime * 0.005 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
+                    self.frameTime * 0.005 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
+                    0
+                ]
             self.scene.move_player(dPos)
-        global is_grounded
         
-        if is_grounded and keys[pg.K_SPACE]:
-            global velocityY
-            velocityY = .01
+        if keys[pg.K_LEFTBRACKET]:
+            EDITOR_MODE = True
+        if keys[pg.K_RIGHTBRACKET]:
+            EDITOR_MODE = False
+
+        if keys[pg.K_LSHIFT] and EDITOR_MODE == True:
+            print(player.position)
+
+        if EDITOR_MODE == True:
+            if keys[pg.K_LCTRL]:
+                self.scene.player.position[2] = self.scene.player.position[2] - 0.01
+            if keys[pg.K_SPACE]:
+                self.scene.player.position[2] = self.scene.player.position[2] + 0.01
+        if EDITOR_MODE == False:
+            if is_grounded and keys[pg.K_SPACE]:
+                global velocityY
+                velocityY = .0037
+            
 
     def handleMouse(self):
-
+        global x, y
+        keys = pg.key.get_pressed()
+        
         (x,y) = pg.mouse.get_pos()
+        
         
         theta_increment = self.frameTime * 0.045 * ((self.screenWidth // 2) - x)
         phi_increment = self.frameTime * 0.045 * ((self.screenHeight // 2) - y)
@@ -628,6 +652,8 @@ class GraphicsEngine:
                                     pg.GL_CONTEXT_PROFILE_CORE)
         pg.display.set_mode((self.screenWidth,self.screenHeight), pg.OPENGL|pg.DOUBLEBUF)
 
+        
+
         #initialise opengl
         
         glClearColor(0.0, 0.0, 0.0, 1)
@@ -635,6 +661,8 @@ class GraphicsEngine:
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         
+        
+
         self.create_framebuffers()
 
         self.setup_shaders()
@@ -704,6 +732,8 @@ class GraphicsEngine:
 
         self.post_shader = self.createShader("shaders/simple_post_vertex.txt", "shaders/post_fragment.txt")
 
+        self.EDITOR_shader = self.createShader("shaders/simple_post_vertex.txt", "shaders/editor_frag.txt")
+
         self.crt_shader = self.createShader("shaders/simple_post_vertex.txt", "shaders/crt_fragment.txt")
 
         self.screen_shader = self.createShader("shaders/simple_post_vertex.txt", "shaders/screen_fragment.txt")
@@ -770,7 +800,10 @@ class GraphicsEngine:
         self.screen = TexturedQuad(0, 0, 1, 1)
         
         self.font = Font()
-        self.fps_label = TextLine("FPS: ", self.font, (-0.9, 0.9), (0.05, 0.05))
+        self.fps_label = TextLine("fps =", self.font, (-0.9, 0.9), (0.05, 0.05))
+        self.mode_label = TextLine("mode =", self.font, (-0.9, 0.8), (0.05, 0.05))
+        self.posx_label = TextLine("x =", self.font, (-0.9, 0.7), (0.05, 0.05))
+        self.posy_label = TextLine("y =", self.font, (-0.9, 0.6), (0.05, 0.05))
         global TestGroup
         
         
@@ -815,7 +848,11 @@ class GraphicsEngine:
         global TestGroup
         for Tes in TestGroup:
             Tes.update(120)
-        self.fps_label.build_text(f"FPS: {new_fps}", self.font)
+        
+        self.fps_label.build_text(f"fps =: {new_fps}", self.font)
+        self.mode_label.build_text(f"mode =: {EDITOR_MODE}", self.font)
+        self.posx_label.build_text(f"x =: {player.position[0]}", self.font)
+        self.posy_label.build_text(f"y =: {player.position[1]}", self.font)
     
     
     def render(self, scene):
@@ -907,8 +944,19 @@ class GraphicsEngine:
 
         glUniform4fv(self.tintLoc["screen"], 1, np.array([1.0, 0.0, 0.0, 1.0], dtype = np.float32))
         self.font.use()
-        glBindVertexArray(self.fps_label.vao)
-        glDrawArrays(GL_TRIANGLES, 0, self.fps_label.vertex_count)
+
+        if EDITOR_MODE == True:
+            glBindVertexArray(self.fps_label.vao)
+            glDrawArrays(GL_TRIANGLES, 0, self.fps_label.vertex_count)
+
+            glBindVertexArray(self.mode_label.vao)
+            glDrawArrays(GL_TRIANGLES, 0, self.mode_label.vertex_count)
+
+            glBindVertexArray(self.posx_label.vao)
+            glDrawArrays(GL_TRIANGLES, 0, self.posx_label.vertex_count)
+
+            glBindVertexArray(self.posy_label.vao)
+            glDrawArrays(GL_TRIANGLES, 0, self.posy_label.vertex_count)
 
         """
         #Blit color buffer 1 onto color buffer 0
@@ -924,8 +972,11 @@ class GraphicsEngine:
         glDrawArrays(GL_TRIANGLES, 0, self.screen.vertex_count)
         """
 
-        
-        glUseProgram(self.crt_shader)
+        if EDITOR_MODE == True:
+            glUseProgram(self.EDITOR_shader)
+        else:
+            glUseProgram(self.crt_shader)
+
         
         glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[1])
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -965,6 +1016,7 @@ class GraphicsEngine:
         glDeleteProgram(self.lighting_shader)
         glDeleteProgram(self.unlit_shader)
         glDeleteProgram(self.post_shader)
+        glDeleteProgram(self.EDITOR_shader)
         glDeleteTextures(len(self.colorBuffers), self.colorBuffers)
         glDeleteRenderbuffers(len(self.depthStencilBuffers), self.depthStencilBuffers)
         glDeleteFramebuffers(len(self.fbos), self.fbos)
@@ -1320,4 +1372,7 @@ class TextLine:
         glDeleteVertexArrays(1, (self.vao,))
         glDeleteBuffers(1,(self.vbo,))
 
+
 myApp = App(800,600)
+
+
