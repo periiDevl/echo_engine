@@ -331,12 +331,12 @@ class Scene:
                 position = [
                     0.0, 
                     0.0, 
-                    0.0
+                    0.9
                 ],
                 color = [
                     1,1,1
                 ],
-                strength = 3
+                strength = 1
             )
             for i in range(8)
         ]
@@ -365,7 +365,8 @@ class Scene:
         global velocityY, is_grounded
         is_grounded = False
         global mapcolliders
-        mapcolliders = [groundCollider(-2500, 2500, 2500, -2500, -1, 0)]
+        mapcolliders = [groundCollider(-2500, 2500, 2500, -2500, -1, 0),
+        groundCollider(-6.54, 1.55, -1.05, -1.59, -9, 9),]
         for i in TestGroup:
             mapcolliders.append(groundCollider(i.position[0] - 2, i.position[0] + 2, i.position[1] + 2,  i.position[1] - 2, -1, 0))
             
@@ -375,7 +376,7 @@ class Scene:
         collide = False
         for col in mapcolliders:
              if col:
-                  collider = True
+                  collide = True
 
         if not collide:
              velocityY += -0.2 * (1/120) * (1/120)
@@ -709,14 +710,18 @@ class GraphicsEngine:
     def create_assets(self):
 
         glUseProgram(self.lighting_shader)
-        self.wood_texture = AdvancedMaterial("/woodFloor/WoodFloor", "jpg")
-        self.wall_texture = AdvancedMaterial("/brick/wall", "jpg")
         
         
-        self.floor = Mesh("models/floor.obj", 14, 2)
-        self.walls = Mesh("models/walls.obj", 8, 2)
+        self.proto = AdvancedMaterial("Prototexture/Proto", "png")
         
         
+        
+        #self.plate = Mesh("models/plate.obj", 14, 0.5)
+        #self.pancakes = Mesh("models/pancakes.obj", 14, 0.5)
+
+        self.wall1 = Mesh("models/wall1.obj", 10, 1)
+        self.wall1B = Mesh("models/wall1B.obj", 10, 1)
+
         #self.medkit_texture = AdvancedMaterial("medkit")
         self.medkit_billboard = BillBoard(w = 0.6, h = 0.5)
 
@@ -734,21 +739,23 @@ class GraphicsEngine:
         TestGroup = [
             SlowComponent(
                 
-                mesh = self.walls,
-                tex = self.wall_texture,
-                position = [0,0,4],
+                mesh = self.wall1,
+                tex = self.proto,
+                position = [0,0,0],
+                eulers = [90,0,0],
+                draw = True
+            ),
+
+            SlowComponent(
+                
+                mesh = self.wall1B,
+                tex = self.proto,
+                position = [0,0,0],
                 eulers = [90,0,0],
                 draw = True
             ),
             
-            SlowComponent(
-                
-                mesh = self.floor,
-                tex = self.wood_texture,
-                position = [0,0,-1.5],
-                eulers = [90,0,0],
-                draw = True
-            ),
+            
             ]
         
     
@@ -880,7 +887,7 @@ class GraphicsEngine:
         glDrawArrays(GL_TRIANGLES, 0, self.screen.vertex_count)
         """
 
-        #CRT emulation pass
+        
         glUseProgram(self.post_shader)
         
         glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[1])
@@ -909,9 +916,9 @@ class GraphicsEngine:
 
     def destroy(self):
 
-        self.floor.destroy()
-        self.wall_texture.destroy()
-        self.wood_texture.destroy()
+        
+        
+        
         self.medkit_billboard.destroy()
         #self.medkit_texture.destroy()
         self.light_billboard.destroy()
