@@ -179,7 +179,7 @@ def groundCollider(z1, z2, x1, x2, y1, y2):
                 if velocityY <= 0:
                     velocityY = 0
                 player.position[2] = beforeY
-                print("COLLIDER Y")
+
 
 
                 #Check if before collsiion z was in collider
@@ -402,7 +402,7 @@ class Scene:
         is_grounded = False
         global mapcolliders
         mapcolliders = [groundCollider(-2500, 2500, 2500, -2500, -1, 0),
-        Collider(-1.59,-1.05 ,1.55,-6.54),]
+        groundCollider(-1.59,-1.05 ,1.55,-6.54,-1, 10),]
         for i in TestGroup:
             mapcolliders.append(groundCollider(i.position[0] - 2, i.position[0] + 2, i.position[1] + 2,  i.position[1] - 2, -1, 0))
             
@@ -414,13 +414,14 @@ class Scene:
              if col:
                   collide = True
 
-        if not collide:
+        if not is_grounded:
              velocityY += -0.2 * (1/60) * (1/60)
-
+             print("resetBeforePoses")
              beforeZ = self.player.position[1]
              beforeX = self.player.position[0]
              beforeY = self.player.position[2]
         self.player.position[2] += velocityY
+
     
     def move_player(self, dPos):
 
@@ -868,7 +869,6 @@ class GraphicsEngine:
                 glBindVertexArray(nonscriptname.mesh.vao)
                 if nonscriptname.draw == True:
                     glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
-        print(player.position, nonscriptname.position[0]- 2, -nonscriptname.position[0] + 2, -nonscriptname.position[1] + 2,  nonscriptname.position[1] - 2, -50, 50)
         for i,light in enumerate(scene.lights):
             glUniform3fv(self.lightLocation["position"][i], 1, light.position)
             glUniform3fv(self.lightLocation["color"][i], 1, light.color)
