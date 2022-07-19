@@ -179,14 +179,50 @@ def groundCollider(z1, z2, x1, x2, y1, y2):
                 if velocityY <= 0:
                     velocityY = 0
                 player.position[2] = beforeY
-                return True
+                print("COLLIDER Y")
+
+
                 #Check if before collsiion z was in collider
              if beforeZ > z1 and beforeZ < z2 :
                 player.position[0] = beforeX
+
                 #Check if before collsiion x was in collider
              if beforeX < x1 and beforeX > x2 :
                 player.position[1] = beforeZ
+             return True
+
         return False
+
+
+def Collider(z1, z2, x1, x2):
+        global beforeX
+        global beforeZ
+        
+        
+
+        # Check if inside the box at X-axis and Check if inside the box at Z-axis and Check if inside the box at Y-axis
+        if player.position[0] < x1 and player.position[0] > x2 and player.position[1] > z1 and player.position[1] < z2:
+             
+            if beforeZ > z1 and beforeZ < z2 and beforeX < x1 and beforeX > x2:
+                
+                if velocityY <= 0:
+                    velocityY = 0
+                
+                
+
+                #Check if before collsiion z was in collider
+            if beforeZ > z1 and beforeZ < z2 :
+                player.position[0] = beforeX
+                
+                #Check if before collsiion x was in collider
+            if beforeX < x1 and beforeX > x2 :
+                player.position[1] = beforeZ
+            return True
+
+        return False
+                
+
+             
 
 class SimpleComponent:
 
@@ -366,7 +402,7 @@ class Scene:
         is_grounded = False
         global mapcolliders
         mapcolliders = [groundCollider(-2500, 2500, 2500, -2500, -1, 0),
-        groundCollider(-6.54, 1.55, -1.05, -1.59, -9, 9),]
+        Collider(-1.59,-1.05 ,1.55,-6.54),]
         for i in TestGroup:
             mapcolliders.append(groundCollider(i.position[0] - 2, i.position[0] + 2, i.position[1] + 2,  i.position[1] - 2, -1, 0))
             
@@ -379,11 +415,12 @@ class Scene:
                   collide = True
 
         if not collide:
-             velocityY += -0.2 * (1/120) * (1/120)
-             self.player.position[2] += velocityY
-             beforePosz = self.player.position[1]
-             beforePosx = self.player.position[0]
-             beforePosy = self.player.position[2]
+             velocityY += -0.2 * (1/60) * (1/60)
+
+             beforeZ = self.player.position[1]
+             beforeX = self.player.position[0]
+             beforeY = self.player.position[2]
+        self.player.position[2] += velocityY
     
     def move_player(self, dPos):
 
@@ -888,7 +925,7 @@ class GraphicsEngine:
         """
 
         
-        glUseProgram(self.post_shader)
+        glUseProgram(self.crt_shader)
         
         glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[1])
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
