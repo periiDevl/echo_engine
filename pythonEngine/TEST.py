@@ -389,7 +389,8 @@ class Scene:
             mapcolliders = [groundCollider(-2500, 2500, 2500, -2500, -1, 0),
             groundCollider(-1.59,-1.05 ,1.55,-6.54,-1, 10),
             groundCollider(-1.59,3.9,-6.06,-6.58,-1, 10),
-            groundCollider(1.037,1.552,1.547, -3.87, -1, 10),]
+            groundCollider(1.037,1.552,1.547, -3.87, -1, 10),
+            groundCollider(-1.7,1.71,1.8,1.01, -1, 10),]
         
             
         
@@ -1373,6 +1374,6 @@ class TextLine:
         glDeleteBuffers(1,(self.vbo,))
 
 
-myApp = App(800,600)
+myApp = App(1200,800)
 
 
