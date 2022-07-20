@@ -21,6 +21,9 @@ global player
 global EDITOR_MODE
 EDITOR_MODE = config.EDITOR_MODE
 
+global maplev
+maplev = 0
+
 class Mesh:
 
 
@@ -199,6 +202,19 @@ def groundCollider(z1, z2, x1, x2, y1, y2):
 
         return False
 
+def DoorCollider(z1, z2, x1, x2, y1, y2):
+        global beforeX
+        global beforeZ
+        global beforeY
+        global is_grounded, velocityY
+
+        # Check if inside the box at X-axis and Check if inside the box at Z-axis and Check if inside the box at Y-axis
+        if player.position[0] < x1 and player.position[0] > x2 and player.position[1] > z1 and player.position[1] < z2 and player.position[2] > y1 and player.position[2] < y2:
+             
+             return True
+
+        return False
+
 
 
                 
@@ -348,14 +364,40 @@ class Scene:
                 position = [
                     0.0, 
                     0.0, 
-                    0.9
+                    0.1
                 ],
                 color = [
                     1,1,1
                 ],
-                strength = 1
+                strength = 0.8
+            ),
+
+            BrightBillboard(
+                position = [
+                    -4.16, 
+                    0.0, 
+                    0.1
+                ],
+                color = [
+                    1,1,1
+                ],
+                strength = 0.8
+            ),
+
+            BrightBillboard(
+                position = [
+                    -5.04, 
+                    3.099, 
+                    0.1
+                ],
+                color = [
+                    0,1,0
+                ],
+                strength = 0.8
             )
-            for i in range(8)
+            
+            
+            
         ]
 
         self.player = Player(
@@ -390,7 +432,11 @@ class Scene:
             groundCollider(-1.59,-1.05 ,1.55,-6.54,-1, 10),
             groundCollider(-1.59,3.9,-6.06,-6.58,-1, 10),
             groundCollider(1.037,1.552,1.547, -3.87, -1, 10),
-            groundCollider(-1.7,1.71,1.8,1.01, -1, 10),]
+            groundCollider(-1.7,1.71,1.8,1.01, -1, 10),
+            groundCollider(1.06,4.07,-3.32,-3.85, -1, 10),
+            groundCollider(3.512,3.94,-3.38,-6.7, -1, 10),
+            #door!
+            DoorCollider(3.2,3.87,-4.45,-5.62, -1, 10),]
         
             
         
@@ -566,14 +612,14 @@ class App:
             
             if is_grounded == False and EDITOR_MODE == False:
                 dPos = [
-                    self.frameTime * 0.0007 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
-                    self.frameTime * 0.0007 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
+                    self.frameTime * 0.004 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
+                    self.frameTime * 0.004 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
                     0
                 ]
             else:
                 dPos = [
-                    self.frameTime * 0.002 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
-                    self.frameTime * 0.002 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
+                    self.frameTime * 0.01 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
+                    self.frameTime * 0.01 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
                     0
                 ]
 
@@ -781,15 +827,23 @@ class GraphicsEngine:
         glUseProgram(self.lighting_shader)
         
         
+        self.wood = AdvancedMaterial("woodFloor/WoodFloor", "jpg")
+        self.woodblack = AdvancedMaterial("brick/wall", "jpg")
+        self.floor1Tex = AdvancedMaterial("floor/Florr", "jpg")
+        self.CO = AdvancedMaterial("Tile/CO", "jpg")
         self.proto = AdvancedMaterial("Prototexture/Proto", "png")
+        self.white = AdvancedMaterial("wh", "png")
         
         
         
         #self.plate = Mesh("models/plate.obj", 14, 0.5)
         #self.pancakes = Mesh("models/pancakes.obj", 14, 0.5)
 
-        self.wall1 = Mesh("models/wall1.obj", 10, 1)
+        self.wall1 = Mesh("models/wall1.obj", 5, 1)
         self.wall1B = Mesh("models/wall1B.obj", 10, 1)
+        self.floor = Mesh("models/floor1.obj", 10, 1)
+        self.ceiling = Mesh("models/ceiling1.obj", 10, 1)
+        self.fin = Mesh("models/fin.obj", 10, 1)
 
         #self.medkit_texture = AdvancedMaterial("medkit")
         self.medkit_billboard = BillBoard(w = 0.6, h = 0.5)
@@ -812,7 +866,7 @@ class GraphicsEngine:
             SlowComponent(
                 
                 mesh = self.wall1,
-                tex = self.proto,
+                tex = self.wood,
                 position = [0,0,0],
                 eulers = [90,0,0],
                 draw = True
@@ -821,8 +875,35 @@ class GraphicsEngine:
             SlowComponent(
                 
                 mesh = self.wall1B,
-                tex = self.proto,
+                tex = self.woodblack,
                 position = [0,0,0],
+                eulers = [90,0,0],
+                draw = True
+            ),
+
+            SlowComponent(
+                
+                mesh = self.floor,
+                tex = self.CO,
+                position = [0,0,0],
+                eulers = [90,0,0],
+                draw = True
+            ),
+
+            SlowComponent(
+                
+                mesh = self.ceiling,
+                tex = self.floor1Tex,
+                position = [0,0,0],
+                eulers = [90,0,0],
+                draw = True
+            ),
+
+            SlowComponent(
+                
+                mesh = self.fin,
+                tex = self.white,
+                position = [0,0,-0.5],
                 eulers = [90,0,0],
                 draw = True
             ),
