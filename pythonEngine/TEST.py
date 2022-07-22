@@ -448,8 +448,10 @@ class Scene:
         global velocityY, is_grounded
         is_grounded = False
         global mapcolliders
-
-        if EDITOR_MODE == False:
+        keys = pg.key.get_pressed()
+        
+        
+        if EDITOR_MODE == False or keys[pg.K_LSHIFT]:
             pg.mouse.set_visible(False)
         else:
             pg.mouse.set_visible(True)
@@ -682,12 +684,12 @@ class App:
 
     def handleMouse(self):
         global x, y
-        keys = pg.key.get_pressed()
+        
         
         (x,y) = pg.mouse.get_pos()
+        keys = pg.key.get_pressed()
         
-        
-        if EDITOR_MODE == False:
+        if EDITOR_MODE == False or keys[pg.K_LSHIFT]:
             theta_increment = self.frameTime * 0.045 * ((self.screenWidth // 2) - x)
             phi_increment = self.frameTime * 0.045 * ((self.screenHeight // 2) - y)
             self.scene.spin_player(theta_increment, phi_increment)
