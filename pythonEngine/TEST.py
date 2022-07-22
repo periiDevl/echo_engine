@@ -480,7 +480,7 @@ class Scene:
                     collide = True
 
             if not is_grounded:
-                velocityY += -0.2 * (1/60) * (1/60)
+                velocityY += -0.2 * (1/1000)
                 beforeZ = self.player.position[1]
                 beforeX = self.player.position[0]
                 beforeY = self.player.position[2]
@@ -700,13 +700,13 @@ class App:
 
         self.currentTime = pg.time.get_ticks()
         delta = self.currentTime - self.lastTime
-        if (delta >= 120):
-            framerate = max(1,int(120.0 * self.numFrames/delta))
+        if (delta >= 1000):
+            framerate = max(1,int(1000.0 * self.numFrames/delta))
             pg.display.set_caption(f"Echo window")
             self.renderer.update_fps(framerate)
             self.lastTime = self.currentTime
             self.numFrames = -1
-            self.frameTime = float(120.0 / max(1,framerate))
+            self.frameTime = float(1000.0 / max(1,framerate))
         self.numFrames += 1
 
     def quit(self):
