@@ -17,8 +17,8 @@ global root
 global EDITOR_MODE
 EDITOR_MODE = config.EDITOR_MODE
 root = Tk()
-embed = Frame(root, width=640, height=100)
-embed.grid(row=0,column=2)
+embed = Frame(root, width=640, height=10)
+embed.grid(row=0,column=0)
 root.update()
 
 
@@ -449,6 +449,11 @@ class Scene:
         is_grounded = False
         global mapcolliders
 
+        if EDITOR_MODE == False:
+            pg.mouse.set_visible(False)
+        else:
+            pg.mouse.set_visible(True)
+
         if EDITOR_MODE == True:
             mapcolliders = []
         else:
@@ -687,6 +692,7 @@ class App:
             phi_increment = self.frameTime * 0.045 * ((self.screenHeight // 2) - y)
             self.scene.spin_player(theta_increment, phi_increment)
             pg.mouse.set_pos((self.screenWidth // 2,self.screenHeight // 2))
+        
 
     def calculateFramerate(self):
 
@@ -717,10 +723,8 @@ class GraphicsEngine:
 
         #initialise pygame
         pg.init()
-        if EDITOR_MODE == False:
-            pg.mouse.set_visible(False)
-        else:
-            pg.mouse.set_visible(True)
+        
+        
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK,
