@@ -10,16 +10,39 @@ import pyrr
 import math
 import random
 from tkinter import *
+import os
 ####################### Model #################################################
+import config
+global root
+global EDITOR_MODE
+EDITOR_MODE = config.EDITOR_MODE
+root = Tk()
+embed = Frame(root, width=640, height=100)
+embed.grid(row=0,column=2)
+root.update()
+
+
+def EdFalse():
+    global EDITOR_MODE
+    if EDITOR_MODE == False:
+        EDITOR_MODE = True
+    else:
+        EDITOR_MODE = False
+
+B = Button(text ="play", command = EdFalse)
+
+B.grid()
+
+
+
+
+
 global beforeX, beforeZ, beforeY, is_grounded
 beforeX = 0
 beforeY = 0
 beforeZ = 0
-import config
 is_grounded = False
 global player
-global EDITOR_MODE
-EDITOR_MODE = config.EDITOR_MODE
 
 global maplev
 maplev = 0
@@ -407,7 +430,8 @@ class Scene:
         player = self.player
 
     def update(self, rate):
-
+        global root
+        root.update()
         global TestGroup
         T = False
         
@@ -658,10 +682,11 @@ class App:
         (x,y) = pg.mouse.get_pos()
         
         
-        theta_increment = self.frameTime * 0.045 * ((self.screenWidth // 2) - x)
-        phi_increment = self.frameTime * 0.045 * ((self.screenHeight // 2) - y)
-        self.scene.spin_player(theta_increment, phi_increment)
-        pg.mouse.set_pos((self.screenWidth // 2,self.screenHeight // 2))
+        if EDITOR_MODE == False:
+            theta_increment = self.frameTime * 0.045 * ((self.screenWidth // 2) - x)
+            phi_increment = self.frameTime * 0.045 * ((self.screenHeight // 2) - y)
+            self.scene.spin_player(theta_increment, phi_increment)
+            pg.mouse.set_pos((self.screenWidth // 2,self.screenHeight // 2))
 
     def calculateFramerate(self):
 
@@ -692,7 +717,10 @@ class GraphicsEngine:
 
         #initialise pygame
         pg.init()
-        pg.mouse.set_visible(False)
+        if EDITOR_MODE == False:
+            pg.mouse.set_visible(False)
+        else:
+            pg.mouse.set_visible(True)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK,
