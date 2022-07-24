@@ -12,10 +12,10 @@ import random
 from tkinter import *
 import os
 ####################### Model #################################################
-import config
+
 global root
 global EDITOR_MODE
-EDITOR_MODE = config.EDITOR_MODE
+EDITOR_MODE = False
 root = Tk()
 embed = Frame(root, width=640, height=10)
 embed.grid(row=0,column=0)

@@ -1,1 +1,0 @@
-EDITOR_MODE = False
