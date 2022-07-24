@@ -63,3 +63,4 @@ vec3 CalculatePointLight(int i, vec3 normal) {
     
     return result;
 }
+

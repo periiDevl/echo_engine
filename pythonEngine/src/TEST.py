@@ -9,30 +9,30 @@ import numpy as np
 import pyrr
 import math
 import random
-from tkinter import *
+#from tkinter import *
 import os
 ####################### Model #################################################
 
 global root
 global EDITOR_MODE
+
 EDITOR_MODE = False
-root = Tk()
-embed = Frame(root, width=640, height=10)
-embed.grid(row=0,column=0)
-root.update()
+#root = Tk()
+#embed = Frame(root, width=640, height=10)
+#embed.grid(row=0,column=0)
+#root.update()
 
 
-def EdFalse():
-    global EDITOR_MODE
-    if EDITOR_MODE == False:
-        EDITOR_MODE = True
-    else:
-        EDITOR_MODE = False
+#def EdFalse():
+ #   global EDITOR_MODE
+  #  if EDITOR_MODE == False:
+   #     EDITOR_MODE = True
+    #else:
+     #   EDITOR_MODE = False
 
-B = Button(text ="play", command = EdFalse)
+#B = Button(text ="play", command = EdFalse)
 
-B.grid()
-
+#B.grid()
 
 
 
@@ -46,6 +46,9 @@ global player
 
 global maplev
 maplev = 0
+
+global groupDrawList
+groupDrawList = []
 
 class Mesh:
 
@@ -430,8 +433,8 @@ class Scene:
         player = self.player
 
     def update(self, rate):
-        global root
-        root.update()
+        #global root
+        #root.update()
         global TestGroup
         T = False
         
@@ -894,7 +897,8 @@ class GraphicsEngine:
         self.posx_label = TextLine("x =", self.font, (-0.9, 0.7), (0.05, 0.05))
         self.posy_label = TextLine("y =", self.font, (-0.9, 0.6), (0.05, 0.05))
         global TestGroup
-        
+        global groupDrawList
+
         
         TestGroup = [
             SlowComponent(
@@ -945,6 +949,7 @@ class GraphicsEngine:
             
             ]
         
+        groupDrawList = [TestGroup]
     
     def createShader(self, vertexFilepath, fragmentFilepath):
 
@@ -970,10 +975,39 @@ class GraphicsEngine:
         self.posx_label.build_text(f"x =: {player.position[0]}", self.font)
         self.posy_label.build_text(f"y =: {player.position[1]}", self.font)
     
-    
+
     def render(self, scene):
        
-        
+        global groupDrawList
+        def createObject(group):
+            for nonscriptname in group:
+                    
+                    
+                    #mapcolliders = [groundCollider(-2500, 2500, 2500, -2500, -1, 0)]
+                    
+                    
+                    
+                        
+
+                    model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
+                    model_transform = pyrr.matrix44.multiply(
+                        m1=model_transform, 
+                        m2=pyrr.matrix44.create_from_eulers(
+                            eulers=np.radians(nonscriptname.eulers), dtype=np.float32
+                        )
+                    )
+                    model_transform = pyrr.matrix44.multiply(
+                        m1=model_transform, 
+                        m2=pyrr.matrix44.create_from_translation(
+                            vec=np.array(nonscriptname.position),dtype=np.float32
+                        )
+                    )
+                    glUniformMatrix4fv(self.modelMatrixLocation["lit"],1,GL_FALSE,nonscriptname.modelTransform)
+                    
+                    nonscriptname.tex.use()
+                    glBindVertexArray(nonscriptname.mesh.vao)
+                    if nonscriptname.draw == True:
+                        glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
         #First pass
         glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[0])
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -992,49 +1026,16 @@ class GraphicsEngine:
         
 
         global TestGroup
-        
-        
-        for nonscriptname in TestGroup:
-                
-                
-                #mapcolliders = [groundCollider(-2500, 2500, 2500, -2500, -1, 0)]
-                
-                
-                
-                    
+        for variable in groupDrawList:
+            createObject(variable)
 
-                model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
-                model_transform = pyrr.matrix44.multiply(
-                    m1=model_transform, 
-                    m2=pyrr.matrix44.create_from_eulers(
-                        eulers=np.radians(nonscriptname.eulers), dtype=np.float32
-                    )
-                )
-                model_transform = pyrr.matrix44.multiply(
-                    m1=model_transform, 
-                    m2=pyrr.matrix44.create_from_translation(
-                        vec=np.array(nonscriptname.position),dtype=np.float32
-                    )
-                )
-                glUniformMatrix4fv(self.modelMatrixLocation["lit"],1,GL_FALSE,nonscriptname.modelTransform)
-                
-                nonscriptname.tex.use()
-                glBindVertexArray(nonscriptname.mesh.vao)
-                if nonscriptname.draw == True:
-                    glDrawArrays(GL_TRIANGLES, 0, nonscriptname.mesh.vertex_count)
+
+        
+        
         for i,light in enumerate(scene.lights):
             glUniform3fv(self.lightLocation["position"][i], 1, light.position)
             glUniform3fv(self.lightLocation["color"][i], 1, light.color)
             glUniform1f(self.lightLocation["strength"][i], light.strength)
-
-        #self.wood_texture.use()
-        #glBindVertexArray(self.cube_mesh.vao)
-        
-        
-
-
-        #CREATE_OBJECT(TestGroup)
-        #self.medkit_texture.use()
         glBindVertexArray(self.medkit_billboard.vao)
         for medkit in scene.medkits:
             glUniformMatrix4fv(self.modelMatrixLocation["lit"],1,GL_FALSE,medkit.modelTransform)
@@ -1073,20 +1074,6 @@ class GraphicsEngine:
 
             glBindVertexArray(self.posy_label.vao)
             glDrawArrays(GL_TRIANGLES, 0, self.posy_label.vertex_count)
-
-        """
-        #Blit color buffer 1 onto color buffer 0
-        glUseProgram(self.screen_shader)
-        glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[0])
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glDisable(GL_DEPTH_TEST)
-
-
-        glBindTexture(GL_TEXTURE_2D, self.colorBuffers[1])
-        glActiveTexture(GL_TEXTURE0)
-        glBindVertexArray(self.screen.vao)
-        glDrawArrays(GL_TRIANGLES, 0, self.screen.vertex_count)
-        """
 
         if EDITOR_MODE == True:
             glUseProgram(self.EDITOR_shader)

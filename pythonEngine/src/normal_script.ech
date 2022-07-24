@@ -1,0 +1,3 @@
+embed TEST
+print(TEST.groupDrawList)
+TEST.groupDrawList = []

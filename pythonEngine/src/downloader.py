@@ -1,4 +1,3 @@
-from genericpath import exists
 import os
 def createFile(fl, extention ,Exec):
     file = open(fl + '.' + extention, 'a')
