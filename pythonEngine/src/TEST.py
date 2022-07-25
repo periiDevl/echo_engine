@@ -647,23 +647,23 @@ class App:
         keys = pg.key.get_pressed()
         
         if EDITOR_MODE == False or keys[pg.K_LSHIFT]:
-            theta_increment = self.frameTime * 0.045 * ((self.screenWidth // 2) - x)
-            phi_increment = self.frameTime * 0.045 * ((self.screenHeight // 2) - y)
+            theta_increment = self.frameTime * 0.095 * ((self.screenWidth / 2) - x)
+            phi_increment = self.frameTime * 0.095 * ((self.screenHeight / 2) - y)
             self.scene.spin_player(theta_increment, phi_increment)
-            pg.mouse.set_pos((self.screenWidth // 2,self.screenHeight // 2))
+            pg.mouse.set_pos((self.screenWidth / 2,self.screenHeight / 2))
         
 
     def calculateFramerate(self):
 
         self.currentTime = pg.time.get_ticks()
         delta = self.currentTime - self.lastTime
-        if (delta >= 1000):
-            framerate = max(1,int(1000.0 * self.numFrames/delta))
+        if (delta >= 1):
+            framerate = max(1,int(1.0 * self.numFrames/delta))
             pg.display.set_caption(f"Echo window")
             self.renderer.update_fps(framerate)
             self.lastTime = self.currentTime
             self.numFrames = -1
-            self.frameTime = float(1000.0 / max(1,framerate))
+            self.frameTime = float(1.0 / max(1,framerate))
         self.numFrames += 1
 
     def quit(self):
@@ -1379,6 +1379,6 @@ class TextLine:
         glDeleteBuffers(1,(self.vbo,))
 
 
-myApp = App(1200,800)
+myApp = App(1920,1080)
 
 
