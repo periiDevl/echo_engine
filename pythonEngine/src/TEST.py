@@ -430,7 +430,9 @@ class Scene:
         else:
             mapcolliders = [groundCollider(-2500, 2500, 2500, -2500, -1, 0),
             groundCollider(-3.57,10.74,-5,-10.8, -8, 9),
-            groundCollider(-10.74,-5,10.74,-2.2, -8, 9),]
+            groundCollider(-10.74,-5,10.74,-2.2, -8, 9),
+            groundCollider(-10.79,0.79,10.83,4.99, -8, 9),
+            groundCollider(3.10,10.76,0.96,-10.83, -8, 9),]
         
             
         
