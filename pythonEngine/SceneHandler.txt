@@ -1,0 +1,5 @@
+import basicFunctions
+import ObjectPython
+
+SceneObjects = [ObjectPython.Object()]
+SceneObjects[0].name = "New Object"
