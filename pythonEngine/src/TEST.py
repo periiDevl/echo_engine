@@ -647,8 +647,8 @@ class App:
         keys = pg.key.get_pressed()
         
         if EDITOR_MODE == False or keys[pg.K_LSHIFT]:
-            theta_increment = self.frameTime * 0.095 * ((self.screenWidth / 2) - x)
-            phi_increment = self.frameTime * 0.095 * ((self.screenHeight / 2) - y)
+            theta_increment = self.frameTime * 0.295 * ((self.screenWidth / 2) - x)
+            phi_increment = self.frameTime * 0.295 * ((self.screenHeight / 2) - y)
             self.scene.spin_player(theta_increment, phi_increment)
             pg.mouse.set_pos((self.screenWidth / 2,self.screenHeight / 2))
         
