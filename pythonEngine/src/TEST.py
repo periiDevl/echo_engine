@@ -9,11 +9,28 @@ import numpy as np
 import pyrr
 import math
 import random
+from tkinter import *
 
 import os
-
-
 global root
+
+
+
+root = Tk()
+embed = Frame(root, width=640, height=10)
+embed.grid(row=0,column=0)
+root.update()
+def EdFalse():
+    global EDITOR_MODE
+    if EDITOR_MODE == False:
+        EDITOR_MODE = True
+    else:
+        EDITOR_MODE = False
+
+playB = Button(text ="play", command = EdFalse)
+
+playB.grid()
+
 global EDITOR_MODE
 
 EDITOR_MODE = False
@@ -152,8 +169,7 @@ class Mesh:
                     deltaUV1 = [uv2[i] - uv1[i] for i in range(2)]
                     deltaUV2 = [uv3[i] - uv1[i] for i in range(2)]
                     # calculate
-                    den = 1 / (deltaUV1[0] * deltaUV2[1] - deltaUV2[0] * deltaUV1[1])
-                    
+                    den = (deltaUV1[0] * deltaUV2[1] - deltaUV2[0] * deltaUV1[1])
                     tangent = []
                     #tangent x
                     tangent.append(den * (deltaUV2[1] * deltaPos1[0] - deltaUV1[1] * deltaPos2[0]))
@@ -170,15 +186,15 @@ class Mesh:
                     bitangent.append(den * (-deltaUV2[0] * deltaPos1[2] + deltaUV1[0] * deltaPos2[2]))
                     for i in vertex_order:
                         for x in faceVertices[i]:
-                            vertices.append(x* mod) 
+                            vertices.append(x * mod)
                         for x in faceTextures[i]:
-                            vertices.append(x* tex) 
+                            vertices.append(x * tex)
                         for x in faceNormals[i]:
-                            vertices.append(x* tex) 
+                            vertices.append(x* tex)
                         for x in tangent:
-                            vertices.append(x* tex) 
+                            vertices.append(x* tex)
                         for x in bitangent:
-                            vertices.append(x* tex) 
+                            vertices.append(x* tex)
                 line = f.readline()
         return vertices
     
@@ -192,10 +208,10 @@ def groundCollider(z1, z2, x1, x2, y1, y2):
         global beforeZ
         global beforeY
         global is_grounded, velocityY
-
+        
         # Check if inside the box at X-axis and Check if inside the box at Z-axis and Check if inside the box at Y-axis
-        if player.position[0] < x1 and player.position[0] > x2 and player.position[1] > z1 and player.position[1] < z2 and player.position[2] > y1 and player.position[2] < y2:
-             if beforeZ > z1 and beforeZ < z2 and beforeX < x1 and beforeX > x2 and player.position[2]:
+        if player.position[0] < x1 and player.position[0]  > x2 and player.position[1] > z1 and player.position[1] < z2 and player.position[2] > y1 and player.position[2] < y2:
+             if beforeZ > z1 and beforeZ < z2 and beforeX < x1 and beforeX > x2 and player.position[2]- 5:
                 is_grounded = True
                 if velocityY <= 0:
                     velocityY = 0
@@ -399,12 +415,15 @@ class Scene:
         player = self.player
 
     def update(self, rate):
-        #global root
-        #root.update()
+        global root
+        root.update()
         global TestGroup
         T = False
         
         for medkit in self.medkits:
+            medkit.position[0] = self.player.position[0] + 4.75
+            medkit.position[1] = self.player.position[1]
+            medkit.position[2] = self.player.position[2] - 5
             medkit.update(self.player.position)
 
         for light in self.lights:
@@ -428,7 +447,7 @@ class Scene:
         if EDITOR_MODE == True:
             mapcolliders = []
         else:
-            mapcolliders = [groundCollider(-2500, 2500, 2500, -2500, -1, 0),
+            mapcolliders = [groundCollider(-2500, 2500, 2500, -2500, -9, 5),
             groundCollider(-3.57,10.74,-5,-10.8, -8, 9),
             groundCollider(-10.74,-5,10.74,-2.2, -8, 9),
             groundCollider(-10.79,0.79,10.83,4.99, -8, 9),
@@ -555,24 +574,7 @@ class App:
         keys = pg.key.get_pressed()
         combo = 0
         directionModifier = 0
-        """
-        w: 1 -> 0 degrees
-        a: 2 -> 90 degrees
-        w & a: 3 -> 45 degrees
-        s: 4 -> 180 degrees
-        w & s: 5 -> x
-        a & s: 6 -> 135 degrees
-        w & a & s: 7 -> 90 degrees
-        d: 8 -> 270 degrees
-        w & d: 9 -> 315 degrees
-        a & d: 10 -> x
-        w & a & d: 11 -> 0 degrees
-        s & d: 12 -> 225 degrees
-        w & s & d: 13 -> 270 degrees
-        a & s & d: 14 -> 180 degrees
-        w & a & s & d: 15 -> x
-        """
-
+        
         if keys[pg.K_w]:
             combo += 1
         if keys[pg.K_a]:
@@ -1379,6 +1381,6 @@ class TextLine:
         glDeleteBuffers(1,(self.vbo,))
 
 
-myApp = App(1920,1080)
+myApp = App(800,800)
 
 
