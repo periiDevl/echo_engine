@@ -5,6 +5,7 @@ from turtle import pos, speed
 import pygame as pg
 from OpenGL.GL import *
 from OpenGL.GL.shaders import compileProgram,compileShader
+
 import numpy as np
 import pyrr
 import math
@@ -31,19 +32,13 @@ playB = Button(text ="play", command = EdFalse)
 
 playB.grid()
 
-global EDITOR_MODE
-
-EDITOR_MODE = False
 
 
 
 
 
-global beforeX, beforeZ, beforeY, is_grounded
-beforeX = 0
-beforeY = 0
-beforeZ = 0
-is_grounded = False
+
+
 global player
 
 global maplev
@@ -203,45 +198,7 @@ class Mesh:
         glDeleteBuffers(1,(self.vbo,))
 
 
-def groundCollider(z1, z2, x1, x2, y1, y2):
-        global beforeX
-        global beforeZ
-        global beforeY
-        global is_grounded, velocityY
-        
-        # Check if inside the box at X-axis and Check if inside the box at Z-axis and Check if inside the box at Y-axis
-        if player.position[0] < x1 and player.position[0]  > x2 and player.position[1] > z1 and player.position[1] < z2 and player.position[2] > y1 and player.position[2] < y2:
-             if beforeZ > z1 and beforeZ < z2 and beforeX < x1 and beforeX > x2 and player.position[2]- 5:
-                is_grounded = True
-                if velocityY <= 0:
-                    velocityY = 0
-                player.position[2] = beforeY
 
-
-
-                #Check if before collsiion z was in collider
-             if beforeZ > z1 and beforeZ < z2 :
-                player.position[0] = beforeX
-
-                #Check if before collsiion x was in collider
-             if beforeX < x1 and beforeX > x2 :
-                player.position[1] = beforeZ
-             return True
-
-        return False
-
-def DoorCollider(z1, z2, x1, x2, y1, y2):
-        global beforeX
-        global beforeZ
-        global beforeY
-        global is_grounded, velocityY
-
-        # Check if inside the box at X-axis and Check if inside the box at Z-axis and Check if inside the box at Y-axis
-        if player.position[0] < x1 and player.position[0] > x2 and player.position[1] > z1 and player.position[1] < z2 and player.position[2] > y1 and player.position[2] < y2:
-             
-             return True
-
-        return False
 
 
 
@@ -433,40 +390,23 @@ class Scene:
         
         global beforeX, beforeZ,beforeY
         
-        global velocityY, is_grounded
-        is_grounded = False
-        global mapcolliders
         keys = pg.key.get_pressed()
         
         
-        if EDITOR_MODE == False or keys[pg.K_LSHIFT]:
-            pg.mouse.set_visible(False)
-        else:
-            pg.mouse.set_visible(True)
+        pg.mouse.set_visible(False)
 
-        if EDITOR_MODE == True:
-            mapcolliders = []
-        else:
-            mapcolliders = [groundCollider(-2500, 2500, 2500, -2500, -9, 5),
-            groundCollider(-3.57,10.74,-5,-10.8, -8, 9),
-            groundCollider(-10.74,-5,10.74,-2.2, -8, 9),]
+
+    
+
+        
         
             
         
 
         self.player.update_vectors()
-        if EDITOR_MODE == False:
-            collide = False
-            for col in mapcolliders:
-                if col:
-                    collide = True
+        
 
-            if not is_grounded:
-                velocityY += -0.02 * (1/1000)
-                beforeZ = self.player.position[1]
-                beforeX = self.player.position[0]
-                beforeY = self.player.position[2]
-            self.player.position[2] += velocityY
+            
 
     
     def move_player(self, dPos):
@@ -491,7 +431,6 @@ class SlowComponent:
 
 
     def __init__(self, mesh , tex ,position, eulers, draw):
-        global mapcolliders
         self.mesh = mesh
         self.tex = tex
         self.position = np.array(position, dtype=np.float32)
@@ -537,6 +476,39 @@ class App:
 
         self.mainLoop()
 
+    def mainLoop(self):
+        running = True
+        timestep = 16.67 / 1000.0  # Convert to seconds
+        accumulator = 0.0
+        lastTime = pg.time.get_ticks() / 1000.0  # Convert to seconds
+
+        while running:
+            # check events
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    running = False
+                elif event.type == pg.KEYDOWN:
+                    if event.key == pg.K_ESCAPE:
+                        running = False
+
+            # update the scene at fixed timestep
+            currentTime = pg.time.get_ticks() / 1000.0  # Convert to seconds
+            frameTime = currentTime - lastTime
+            lastTime = currentTime
+            accumulator += frameTime
+
+            while accumulator >= timestep:
+                self.scene.update(timestep)
+                accumulator -= timestep
+
+            # handle user input
+            self.handleKeys()
+            self.handleMouse()
+
+            # render the scene
+            self.renderer.render(self.scene)
+
+        self.quit()
 
     
     def mainLoop(self):
@@ -550,7 +522,7 @@ class App:
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_ESCAPE:
                         running = False
-            self.scene.update(self.frameTime * 0.05)
+            self.scene.update(60 / 1000)
             
             
             self.handleKeys()
@@ -566,8 +538,10 @@ class App:
             
         self.quit()
 
+    
+
+
     def handleKeys(self):
-        global EDITOR_MODE
         global is_grounded
         keys = pg.key.get_pressed()
         combo = 0
@@ -598,46 +572,28 @@ class App:
             elif combo == 9:
                 directionModifier = 315
             
-            if is_grounded == False and EDITOR_MODE == False:
-                dPos = [
-                    self.frameTime * 0.004 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
-                    self.frameTime * 0.004 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
-                    0
-                ]
-            else:
-                dPos = [
-                    self.frameTime * 0.01 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
-                    self.frameTime * 0.01 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
-                    0
-                ]
+            
+            
+            
 
 
-            if EDITOR_MODE == True:
-                dPos = [
-                    self.frameTime * 0.005 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
-                    self.frameTime * 0.005 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
-                    0
-                ]
+            dPos = [
+                self.frameTime * 0.005 * np.cos(np.deg2rad(self.scene.player.theta + directionModifier)),
+                self.frameTime * 0.005 * np.sin(np.deg2rad(self.scene.player.theta + directionModifier)),
+                0
+            ]
             self.scene.move_player(dPos)
         
-        if keys[pg.K_LEFTBRACKET]:
-            EDITOR_MODE = True
-        if keys[pg.K_RIGHTBRACKET]:
-            EDITOR_MODE = False
+        
 
-        if keys[pg.K_LSHIFT] and EDITOR_MODE == True:
+        if keys[pg.K_LSHIFT]:
             print(player.position)
 
-        if EDITOR_MODE == True:
-            if keys[pg.K_LCTRL]:
-                self.scene.player.position[2] = self.scene.player.position[2] - 0.01
-            if keys[pg.K_SPACE]:
-                self.scene.player.position[2] = self.scene.player.position[2] + 0.01
-        if EDITOR_MODE == False:
-            if is_grounded and keys[pg.K_SPACE]:
-                global velocityY
-                velocityY = .0037
-            
+        if keys[pg.K_LCTRL]:
+            self.scene.player.position[2] = self.scene.player.position[2] - 0.01
+        if keys[pg.K_SPACE]:
+            self.scene.player.position[2] = self.scene.player.position[2] + 0.01
+
 
     def handleMouse(self):
         global x, y
@@ -646,11 +602,10 @@ class App:
         (x,y) = pg.mouse.get_pos()
         keys = pg.key.get_pressed()
         
-        if EDITOR_MODE == False or keys[pg.K_LSHIFT]:
-            theta_increment = self.frameTime * 0.295 * ((self.screenWidth / 2) - x)
-            phi_increment = self.frameTime * 0.295 * ((self.screenHeight / 2) - y)
-            self.scene.spin_player(theta_increment, phi_increment)
-            pg.mouse.set_pos((self.screenWidth / 2,self.screenHeight / 2))
+        theta_increment = self.frameTime * 0.295 * ((self.screenWidth / 2) - x)
+        phi_increment = self.frameTime * 0.295 * ((self.screenHeight / 2) - y)
+        self.scene.spin_player(theta_increment, phi_increment)
+        pg.mouse.set_pos((self.screenWidth / 2,self.screenHeight / 2))
         
 
     def calculateFramerate(self):
@@ -770,7 +725,6 @@ class GraphicsEngine:
 
         self.post_shader = self.createShader("shaders/simple_post_vertex.txt", "shaders/post_fragment.txt")
 
-        self.EDITOR_shader = self.createShader("shaders/simple_post_vertex.txt", "shaders/editor_frag.txt")
 
         self.crt_shader = self.createShader("shaders/simple_post_vertex.txt", "shaders/crt_fragment.txt")
 
@@ -874,7 +828,6 @@ class GraphicsEngine:
             Tes.update(120)
         
         self.fps_label.build_text(f"fps =: {new_fps}", self.font)
-        self.mode_label.build_text(f"mode =: {EDITOR_MODE}", self.font)
         self.posx_label.build_text(f"x =: {player.position[0]}", self.font)
         self.posy_label.build_text(f"y =: {player.position[1]}", self.font)
     
@@ -965,23 +918,20 @@ class GraphicsEngine:
         glUniform4fv(self.tintLoc["screen"], 1, np.array([1.0, 0.0, 0.0, 1.0], dtype = np.float32))
         self.font.use()
 
-        if EDITOR_MODE == True:
-            glBindVertexArray(self.fps_label.vao)
-            glDrawArrays(GL_TRIANGLES, 0, self.fps_label.vertex_count)
+        
+        glBindVertexArray(self.fps_label.vao)
+        glDrawArrays(GL_TRIANGLES, 0, self.fps_label.vertex_count)
 
-            glBindVertexArray(self.mode_label.vao)
-            glDrawArrays(GL_TRIANGLES, 0, self.mode_label.vertex_count)
+            
 
-            glBindVertexArray(self.posx_label.vao)
-            glDrawArrays(GL_TRIANGLES, 0, self.posx_label.vertex_count)
+        glBindVertexArray(self.posx_label.vao)
+        glDrawArrays(GL_TRIANGLES, 0, self.posx_label.vertex_count)
 
-            glBindVertexArray(self.posy_label.vao)
-            glDrawArrays(GL_TRIANGLES, 0, self.posy_label.vertex_count)
+        glBindVertexArray(self.posy_label.vao)
+        glDrawArrays(GL_TRIANGLES, 0, self.posy_label.vertex_count)
 
-        if EDITOR_MODE == True:
-            glUseProgram(self.EDITOR_shader)
-        else:
-            glUseProgram(self.post_shader)
+        
+        glUseProgram(self.post_shader)
 
         
         glBindFramebuffer(GL_FRAMEBUFFER, self.fbos[1])
@@ -1022,7 +972,6 @@ class GraphicsEngine:
         glDeleteProgram(self.lighting_shader)
         glDeleteProgram(self.unlit_shader)
         glDeleteProgram(self.post_shader)
-        glDeleteProgram(self.EDITOR_shader)
         glDeleteTextures(len(self.colorBuffers), self.colorBuffers)
         glDeleteRenderbuffers(len(self.depthStencilBuffers), self.depthStencilBuffers)
         glDeleteFramebuffers(len(self.fbos), self.fbos)
